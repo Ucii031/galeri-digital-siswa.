@@ -1,0 +1,417 @@
+/* --- 1. RESET & DASAR --- */
+/* Biarkan body bisa scroll secara alami */
+
+/* Container Utama */
+/* --- 1. RESET & DASAR --- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Biarkan body bisa scroll secara alami */
+body {
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow-x: hidden; /* Cegah scroll ke samping, tapi izinkan ke bawah */
+}
+
+/* Container Utama */
+.app-container {
+  position: relative;
+  width: 100%;
+  min-height: 100vh; /* Gunakan min-height, bukan height tetap */
+  display: flex;
+  flex-direction: column;
+}
+
+/* KHUSUS DASHBOARD: Pastikan konten bisa meluap ke bawah */
+.main-dashboard {
+  width: 100%;
+  position: relative;
+  z-index: 10;
+  overflow-y: auto; /* Izinkan scroll vertikal */
+}
+
+/* Layer Latar Belakang - Hanya tampil jika dibutuhkan */
+/* Layer Latar Belakang */
+.gambar-bg-global {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1; /* Biarkan tetap rendah */
+  background-color: #5783D4;
+}
+
+/* Layer Konten (Wadah untuk Home/Login) */
+.main-content {
+  position: relative; 
+  z-index: 20; /* Naikkan ini menjadi lebih tinggi dari semua elemen di background */
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Pastikan login-overlay tidak punya background solid yang menutupi layar */
+.login-overlay {
+  z-index: 100;
+}
+
+
+/* --- 2. LAYER LATAR (BACKGROUND & ANIMASI) --- */
+.gambar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  background-color: #5783D4;
+}
+
+.img-taman, .img-logo, .img-mobil, .img-anak {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+
+@keyframes mobilGoyang {
+  0% { transform: translate(-50%, -50%) translateY(0); }
+  50% { transform: translate(-48%, -50%) translateY(-5px); }
+  100% { transform: translate(-50%, -50%) translateY(0); }
+}
+
+@keyframes anakMelompat {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+  50% { transform: translate(-50%, -50%) translateY(-20px); }
+}
+
+/* Ukuran Asset Latar */
+.img-taman { width: 85vmin; max-width: 450px; border-radius: 50%; border: 2px solid white; z-index: 5  }
+.img-logo { width: 55vmin; max-width: 340px; z-index: 10; }
+.img-mobil { width: 40vmin; margin-top: -190px; margin-left: -10px; z-index: 1; animation: mobilGoyang 3s infinite; }
+.img-anak { width: 50vmin; margin-top: -200px; margin-left: 70px; z-index: 2; animation: anakMelompat 2s infinite; }
+.img-awan { position: absolute; width: 110%; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 0; }
+
+/* --- 3. LAYER FORM (OVERLAY GLASSMORPHISM) --- */
+.login-overlay {
+  position: relative;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.2); 
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 30px;
+  border-radius: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 420px;
+  text-align: center;
+  animation: fadeInScale 0.4s ease-out;
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Header di dalam Overlay */
+.section-header h2 {
+   color: #ffffff;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+  font-size: 1.5rem;
+  margin-bottom: 5px;
+}
+
+.section-header p {
+  color: #040405;
+  font-size: 0.85rem;
+  margin-bottom: 20px;
+}
+
+/* Card Wrapper (Isi Putih di dalam Overlay) */
+.card {
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: 0 4px 15px rgba(23, 23, 23, 0.14);
+  text-align: left;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 15px;
+  color: #000000;
+}
+
+/* --- 4. INPUT & TOMBOL --- */
+.auth-form .form-group {
+  margin-bottom: 12px;
+  
+}
+
+.auth-form label {
+  display: block;
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+  color: ;
+  font-weight: 600;
+}
+
+.auth-form input, 
+.select-kelas {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #737373;
+  border-radius: 10px;
+  outline: none;
+  font-size: 0.9rem;
+  transition: 0.3s;
+}
+
+.auth-form input:focus, 
+.select-kelas:focus {
+  border-color: #007BFF;
+  box-shadow: 0 0 10px rgb(25, 13, 250);
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  background-color: #4911f2;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+  margin-top: 10px;
+  
+}
+.btn-primary, a{
+  color:white;
+  text-decoration:none;
+}
+
+.btn-primary:hover {
+  background-color: #00fc;
+  transform: scale(1.02);
+}
+
+.form-footer {
+  margin-top: 15px;
+  font-size: 0.8rem;
+  text-align: center;
+  color: #3a3939;
+}
+
+.form-footer b {
+  color: #0075eb;
+  cursor: pointer;
+}
+
+.form-footer b:hover {
+  text-decoration: underline;
+}
+
+/* Responsif */
+@media screen and (max-width: 768px) {
+  .login-overlay { width: 95%; padding: 20px; }
+  .img-taman { width: 80vmin; }
+}
+
+/* --- Tambahkan ini agar tombol START muncul dan berada di tengah --- */
+
+.tombol-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin-top: 100px; /* Geser ke bawah agar berada di bawah logo */
+  z-index: 150;      /* Angka besar agar berada di paling depan */
+  display: flex;
+  justify-content: center;
+}
+
+.btn-start {
+  padding: 15px 40px;
+  border-radius: 50px;
+  border: 3px solid white;
+  background-color: #007BFF;
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.btn-start:hover {
+  background-color: #0056b3;
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+.btn-start:active {
+  transform: scale(0.95);
+}
+
+
+
+/* ============================================================
+   MEDIA QUERIES (RESPONSIF SEMUA PERANGKAT)
+   ============================================================ */
+
+/* 1. TAMPILAN LAPTOP & DESKTOP (Min-width: 1024px) */
+@media screen and (min-width: 1024px) {
+  /* Skala Gambar Latar */
+  .img-taman { 
+    width: 60vmin; 
+    top: 55%;
+  }
+
+  .img-logo { width: 38vmin; }
+
+  .img-mobil {
+    margin-top: -200px;
+    margin-left: -20px;
+  }
+
+  .img-anak {
+    margin-top: -150px;
+    margin-left: 110px;
+    max-width: 250px;
+  }
+
+  /* Lebar Form Login/Register di Laptop */
+  .login-overlay {
+    max-width: 420px; 
+    padding: 40px;
+  }
+
+  .tombol-wrapper {
+    top: 51%;
+  }
+
+  .btn-start {
+    width: 150px;
+    padding: 15px;
+    font-size: 16px;
+  }
+
+  .login-overlay{
+    top: 2%;
+  
+  }
+
+}
+
+/* 2. TAMPILAN TABLET (768px - 1023px) */
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+  .img-taman { width: 75vmin; }
+  .img-logo { width: 38vmin; }
+
+
+  .img-mobil {
+    margin-top: -300px;
+    margin-left: -10px;
+  }
+
+  .img-anak {
+    margin-top: -320px;
+    margin-left: 120px;
+    
+  }
+
+  .login-overlay {
+    max-width: 500px;
+    padding: 50px;
+  }
+  .tombol-wrapper {
+    top: 52%;
+  }
+
+  .btn-start {
+    width: 190px;
+    padding: 17px;
+    font-size: 30px;
+  }
+}
+
+/* 3. TAMPILAN HP / MOBILE (Max-width: 767px) */
+@media screen and (max-width: 767px) {
+  /* Perkecil gambar agar tidak memenuhi layar */
+  .img-taman { 
+    width: 90vmin; 
+    max-width: 420px; 
+  }
+  
+  .img-logo { width: 45vmin;  }
+
+  .img-mobil {
+    margin-top: -210px;
+    margin-left: -5px;
+    width: 35vmin;
+  }
+
+  .img-anak {
+    margin-top: -180px;
+    margin-left: 90px;
+    width: 50vmin;
+  }
+
+  /* Form Full Width di HP agar mudah diketik */
+  .login-overlay {
+    width: 92%;
+    padding: 20px;
+    border-radius: 15px;
+  }
+
+  .section-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .btn-start {
+    w
+    padding: 14px;
+    font-size: 14px;
+  }
+
+  /* Atur jarak tombol start di HP */
+  .tombol-wrapper {
+    margin-top: 80px;
+  }
+
+  .login-overlay{
+    top:30px;
+  }
+}
+
+/* 4. PENYESUAIAN KHUSUS LAYAR SANGAT KECIL ( < 380px ) */
+@media screen and (max-width: 380px) {
+  .img-mobil, .img-anak {
+    display: none; /* Sembunyikan elemen kecil agar tidak berantakan */
+  }
+  
+  .img-taman {
+    width: 100vmin;
+  }
+
+  .login-overlay {
+    padding: 15px;
+  }
+  
+  .card {
+    padding: 15px;
+  }
+}

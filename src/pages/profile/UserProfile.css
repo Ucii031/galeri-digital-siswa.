@@ -1,0 +1,326 @@
+/* ========================================
+   1. CONTAINER & NAVIGASI DASAR
+   ======================================== */
+.profile-container {
+    width: 100%;
+    max-width: 100%; 
+    margin: 0;
+    padding: 100px 5% 40px; /* Padding samping 5% agar tidak terlalu mepet */
+    min-height: 100vh;
+    background-color: #f6f5f8;
+    box-sizing: border-box;
+}
+
+.btn-back-simple {
+    margin-top: -80px;
+    background: none;
+    border: none;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: -80px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #161823;
+}
+.btn-back-simple:hover {
+    color: #fe2c55;
+    
+}
+
+/* ========================================
+   2. HEADER PROFIL (TikTok Style)
+   ======================================== */
+.profile-header-tiktok {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 25px;
+}
+
+.avatar-wrapper img {
+    margin-top: 90px;
+    width: 116px;
+    height: 116px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #0d147555;
+    background: #aaaaaf;
+}
+
+.profile-username {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+    color: #161823;
+}
+
+.profile-bio {
+    font-size: 1rem;
+    color: #161823;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    max-width: 450px;
+}
+
+/* ========================================
+   3. TABS NAVIGASI
+   ======================================== */
+.profile-tabs {
+    display: flex;
+    border-bottom: 1px solid #5602f3;
+    margin-bottom: 2px;
+}
+
+.profile-tabs button {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 12px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #000000;
+    cursor: pointer;
+    position: relative;
+    transition: 0.3s;
+}
+
+.profile-tabs button.active {
+    color: #1b31af;
+}
+
+.profile-tabs button.active::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #102cca;
+}
+
+/* ========================================
+   4. GRID KARYA & OVERLAY
+   ======================================== */
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+}
+
+.gallery-item-profile {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    background-color: #2b2828f7;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.gallery-item-profile img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease, filter 0.3s ease;
+}
+
+.gallery-item-profile:hover img {
+    transform: scale(1.05);
+}
+
+.status-badge.pending {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-size: 0.65rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    z-index: 2;
+}
+
+.item-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 25px 10px 10px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.6));
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.gallery-item-profile:hover .item-overlay {
+    opacity: 1;
+}
+
+/* ========================================
+   5. MODAL POP-UP DETAIL
+   ======================================== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    padding: 20px;
+}
+
+.modal-content-profile {
+    background: white;
+    width: 100%;
+    max-width: 450px;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes zoomIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.img-fluid-pop {
+    width: 100%;
+    max-height: 70vh;
+    object-fit: cover;
+}
+
+.pop-info {
+    padding: 20px;
+}
+
+.pop-info h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.2rem;
+}
+
+.pop-info p {
+    color: #444;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.close-pop {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+/* ========================================
+   6. FORM & ADMIN PANEL
+   ======================================== */
+.form-manage {
+    padding: 25px;
+    background: #fafafa;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.form-manage button {
+    background-color: #190fac;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* ========================================
+   7. RESPONSIF (HP, TABLET, LAPTOP)
+   ======================================== */
+
+/* HP (Mobile) */
+@media (max-width: 480px) {
+    .profile-header-tiktok {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+    .profile-username { font-size: 1.4rem; }
+    .avatar-wrapper img { width: 96px; height: 96px; }
+    .gallery-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Tablet */
+@media (min-width: 100vh) and (max-width: 100%) {
+    .gallery-grid { 
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px; 
+    }
+    .btn-back-simple {
+    position: sticky;
+    top: 40px;
+    left: 20px;
+    z-index: 9999;
+    }
+
+    .profile-container { 
+        max-width: 90%; 
+        padding-top: 90px;
+    }
+    .avatar-wrapper img {
+         width: 100px; 
+         height: 100px;
+         margin-left: 20%;
+        }
+    .profile-username { 
+        font-size: 1.6rem; 
+        margin-top: 70px;     
+    }
+}
+
+/* Laptop / Desktop */
+@media (min-width: 768px) {
+    .profile-container { 
+        padding-top: 100px; 
+    }
+    .btn-back-simple {
+        position: sticky;
+        top: 40px;
+        margin-left: -10px;
+        z-index: 9999;
+}
+    .avatar-wrapper img {
+         width: 100px; 
+         height: 100px;
+         margin-left: 10%;
+        }
+        .profile-username { 
+        font-size: 1.6rem; 
+        margin-top: 70px; 
+        margin-left: -1%;
+        }
+    .gallery-grid { 
+        gap: 10px;   
+     }
+    .gallery-item-profile { 
+        border-radius: 4px;     
+    }
+}

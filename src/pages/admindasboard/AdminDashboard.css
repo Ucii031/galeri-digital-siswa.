@@ -1,0 +1,171 @@
+:root {
+  --primary: #4f46e5;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --bg: #f8fafc;
+  --text: #1e293b;
+}
+
+.admin-wrapper {
+  background-color: var(--bg);
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+  color: var(--text);
+}
+
+/* NAVBAR */
+.admin-navbar {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  position: fixed;
+  top: 0; width: 100%; z-index: 1000;
+  padding: 0.75rem 0;
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1.5rem;
+}
+
+.nav-links { display: flex; list-style: none; gap: 1.5rem; align-items: center; }
+.nav-links li { cursor: pointer; font-weight: 600; color: #64748b; transition: 0.3s; }
+.nav-links li.active { color: var(--primary); }
+
+.btn-logout {
+  background: #fee2e2;
+  color: var(--danger);
+  border: none;
+  padding: 8px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stats-section { 
+  margin-top: 70px;
+  padding: 1.1 1rem;
+  margin-bottom: 2.1rem;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    margin-bottom: 1.2rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-left: 30px;
+   
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.stat-card {
+  background: white;
+  padding: 12px 8px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 5px;
+}
+
+.stat-icon { 
+    font-size: 1.4rem; 
+    padding: 0.6rem; 
+    border-radius: 10px; 
+}
+
+.stat-icon.purple { color: #6366f1; background: #e0e7ff; }
+.stat-icon.blue { color: #3b82f6; background: #dbeafe; }
+.stat-icon.red { color: #ef4444; background: #fee2e2; }
+.stat-icon.green { color: #22c55e; background: #dcfce7; }
+
+.stat-info h3 { font-size: 1rem; margin: 0; }
+.stat-info p { font-size: 0.65rem; margin: 0; color: #64748b; white-space: nowrap; }
+
+/* --- TABLET (min-width: 768px) --- */
+@media (min-width: 768px) {
+  .stats-grid {
+    gap: 1.1rem;
+    left: px;
+  }
+
+  .stat-card {
+    flex-direction: row;
+    padding: 1.5rem;
+    text-align: left;
+    gap: 1rem;
+  }
+
+  .stat-icon { font-size: 2rem; }
+  .stat-info h3 { font-size: 1.4rem; }
+  .stat-info p { font-size: 0.85rem; }
+}
+
+/* --- LAPTOP/DESKTOP (min-width: 1024px) --- */
+@media (min-width: 1024px) {
+  .stats-section {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+    transition: 0.3s;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+  }
+}
+
+/* --- VALIDASI KARYA --- */
+.validation-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 0 1.5rem;
+}
+
+.val-card { background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+.val-card img { width: 100%; height: 200px; object-fit: cover; }
+.val-details { padding: 1.25rem; }
+.val-actions { display: flex; gap: 10px; margin-top: 15px; }
+
+.btn-app { background: var(--success); color: white; flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer; }
+.btn-rej { background: #f1f5f9; color: var(--text); flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer; }
+
+/* --- TABLES --- */
+.table-container { background: white; border-radius: 12px; padding: 1rem; overflow-x: auto; margin: 0 1.5rem; }
+.admin-table { width: 100%; border-collapse: collapse; }
+.admin-table th, .admin-table td { padding: 1rem; text-align: left; border-bottom: 1px solid #f1f5f9; }
+
+.btn-delete-row, .btn-rej-row {
+  background: #fee2e2; color: #ef4444; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;
+}
+
+.fade-in { animation: fadeIn 0.4s ease-in-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+/* --- NAVBAR MOBILE --- */
+@media (max-width: 768px) {
+  .nav-links { 
+    display: none; 
+    flex-direction: column; 
+    position: absolute; 
+    top: 60px; left: 0; width: 100%; 
+    background: white; padding: 20px; 
+    border-bottom: 1px solid #ddd; 
+  }
+  .nav-links.active { display: flex; }
+  .menu-toggle { display: block; background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+}
