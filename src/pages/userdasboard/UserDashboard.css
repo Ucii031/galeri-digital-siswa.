@@ -531,7 +531,7 @@ body {
     .stats-section { max-width: 1200px; margin-left: auto; margin-right: auto; }
     .stat-card:hover { transform: translateY(-5px); transition: 0.3s; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
     .navbar { padding: 15px 9%; }
-    .hero { padding: 105px 9% 40px; }
+    .hero { padding: 10vh 9% 40px; }
     .hero-title { font-size: 3.5rem; }
     .gallery-post-info { left: 10%; }
     .awan { display: none; }

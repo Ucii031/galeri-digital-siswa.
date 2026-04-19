@@ -346,13 +346,13 @@
 
 @media (min-width: 768px) {
     .profile-container { 
-        max-width: 800px;
+        max-width: 100vh;
         margin: 0 auto;
-        padding-top: 120px; 
+        padding-top: 10%; 
     }
     .btn-back-simple {
         position: fixed;
-        top: 40px;
+        top: 50px;
         left: 5%;
     }
     .gallery-grid { gap: 8px; }
