@@ -56,7 +56,7 @@
     font-weight: 600;
     margin: 0 0 4px 0;
     color: #161823;
-    margin-top:30%;
+    margin-top:0%;
 }
 
 .profile-bio {
@@ -333,13 +333,12 @@
     }
     .profile-stats-row {
         justify-content: center;
-        top:40px;
     }
     .profile-username { font-size: 1.4rem; }
     .avatar-wrapper img { 
         width: 100px; 
         height: 100px; 
-        margin-top: 60px;
+        margin-top: 50px;
     }
     .gallery-grid { grid-template-columns: repeat(3, 1fr); gap: 2px; }
     .btn-back-simple { margin-top: -60px; }
