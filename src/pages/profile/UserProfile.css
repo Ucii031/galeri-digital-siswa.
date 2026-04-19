@@ -3,7 +3,7 @@
    ======================================== */
 .profile-container {
     width: 100%;
-    max-width: 100%; 
+    max-width: 100vh; 
     margin: 0;
     padding: 100px 5% 40px; 
     min-height: 100vh;
@@ -37,12 +37,12 @@
 .profile-header-tiktok {
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 25px;
     margin-bottom: 25px;
 }
 
 .avatar-wrapper img {
-    margin-top: 90px;
+    margin-top: 40px;
     width: 116px;
     height: 116px;
     border-radius: 50%;
@@ -56,6 +56,7 @@
     font-weight: 600;
     margin: 0 0 4px 0;
     color: #161823;
+    margin-top:30%;
 }
 
 .profile-bio {
@@ -71,6 +72,7 @@
 .profile-stats-row {
     display: flex;
     gap: 20px;
+   
 }
 
 .stat-item {
@@ -331,6 +333,7 @@
     }
     .profile-stats-row {
         justify-content: center;
+        top:40px;
     }
     .profile-username { font-size: 1.4rem; }
     .avatar-wrapper img { 
