@@ -3,9 +3,8 @@ import { sb } from '../../api/supabaseClient';
 import './UserProfile.css';
 import { toast, Toaster } from 'react-hot-toast';
 import { IoArrowBackOutline } from "react-icons/io5";
-import { fetchComments, postComment, deleteComment } from '../../api/interaksi';
 
-const UserProfile = ({ user, onBack, viewingUser = null }) => {
+const UserProfile = ({ user, onBack, onUpdate, viewingUser = null }) => {
   const isOwnProfile = !viewingUser || viewingUser.id_user === user.id_user;
   const targetUser = viewingUser || user;
   const isAdmin = user?.role === 'admin';
@@ -20,12 +19,15 @@ const UserProfile = ({ user, onBack, viewingUser = null }) => {
     if (!targetUser?.id_user) return;
     setLoading(true);
     try {
-      const query = sb.from('KARYA').select('*').eq('id_user', targetUser.id_user);
-      if (!isOwnProfile) {
-        query.eq('status', 'publik');
-      }
-      const { data: arts } = await query.order('created_at', { ascending: false });
-      setMyArtworks(arts || []);
+      // Mengambil karya lengkap dengan nama kategori dari tabel KATEGORI
+      const { data: arts } = await sb
+        .from('KARYA')
+        .select(`*, KATEGORI(nama_kategori)`)
+        .eq('id_user', targetUser.id_user)
+        .order('created_at', { ascending: false });
+      
+      const filteredArts = isOwnProfile ? arts : arts.filter(a => a.status === 'publik');
+      setMyArtworks(filteredArts || []);
 
       const { data: cats } = await sb.from('KATEGORI').select('*');
       if (cats) setCategories(cats);
@@ -40,9 +42,9 @@ const UserProfile = ({ user, onBack, viewingUser = null }) => {
 
   return (
     <div className="profile-container">
+      <Toaster position="top-center" />
       <button className="btn-back-simple" onClick={onBack}>
         <IoArrowBackOutline size={22} />
-        <span></span>
       </button>
 
       <section className="profile-header-tiktok">
@@ -63,54 +65,46 @@ const UserProfile = ({ user, onBack, viewingUser = null }) => {
             <button className={activeTab === 'edit' ? 'active' : ''} onClick={() => setActiveTab('edit')}>⚙️ Edit</button>
           </>
         )}
-        {isAdmin && isOwnProfile && (
-          <button className={activeTab === 'admin' ? 'active' : ''} onClick={() => setActiveTab('admin')}>🛡️ Moderasi</button>
-        )}
       </div>
 
       <div className="profile-content">
-        {activeTab === 'karya' && (
+        {loading ? (
+          <p className="loading-msg">Memuat data... ⏳</p>
+        ) : activeTab === 'karya' ? (
           <GalleryGrid 
             artworks={myArtworks} 
             onItemClick={(art) => setSelectedArt(art)} 
           />
-        )}
-        
-        {isOwnProfile && activeTab === 'upload' && (
+        ) : isOwnProfile && activeTab === 'upload' ? (
           <UploadWorkForm 
             user={user} 
             categories={categories} 
             onSuccess={() => { setActiveTab('karya'); fetchData(); }} 
           />
-        )}
-        
-        {isOwnProfile && activeTab === 'edit' && (
+        ) : isOwnProfile && activeTab === 'edit' ? (
           <EditProfileForm 
             user={user} 
-            onSuccess={() => { 
-                toast.success("Profil diperbarui!");
-                setTimeout(() => window.location.reload(), 1000); 
+            onSuccess={(updatedData) => { 
+                if (onUpdate) onUpdate(updatedData); // Update Dashboard
+                setActiveTab('karya'); // Pindah tab otomatis
             }} 
           />
-        )}
-
-        {isAdmin && isOwnProfile && activeTab === 'admin' && (
-          <AdminApprovalPanel />
-        )}
+        ) : null}
       </div>
 
-      {/* Pop-up Karya */}
+      {/* Pop-up Detail Karya */}
       {selectedArt && (
         <div className="modal-overlay" onClick={() => setSelectedArt(null)}>
           <div className="modal-content-profile" onClick={(e) => e.stopPropagation()}>
             <button className="close-pop" onClick={() => setSelectedArt(null)}>✕</button>
             <img src={selectedArt.file_path} alt={selectedArt.judul} className="img-fluid-pop" />
             <div className="pop-info">
-               <h3>{selectedArt.judul}</h3>
-               <p>{selectedArt.deskripsi}</p>
-               <span className={`badge-status ${selectedArt.status}`}>
-                 {selectedArt.status === 'publik' ? '✅ Publik' : '⏳ Menunggu Review'}
-               </span>
+                <span className="pop-cat-badge">{selectedArt.KATEGORI?.nama_kategori || 'Umum'}</span>
+                <h3>{selectedArt.judul}</h3>
+                <p>{selectedArt.deskripsi}</p>
+                <span className={`badge-status ${selectedArt.status}`}>
+                  {selectedArt.status === 'publik' ? '✅ Publik' : '⏳ Menunggu Review'}
+                </span>
             </div>
           </div>
         </div>
@@ -119,7 +113,7 @@ const UserProfile = ({ user, onBack, viewingUser = null }) => {
   );
 };
 
-// Sub-Komponen Galeri
+// --- Sub-Komponen Grid ---
 const GalleryGrid = ({ artworks, onItemClick }) => (
   <section className="gallery-grid">
     {artworks.length > 0 ? artworks.map((art) => (
@@ -132,14 +126,90 @@ const GalleryGrid = ({ artworks, onItemClick }) => (
             filter: art.status === 'menunggu' ? 'grayscale(100%)' : 'none' 
           }} 
         />
-        {art.status === 'menunggu' && <div className="status-badge pending">⏳ Menunggu</div>}
-        <div className="item-overlay"><span>{art.judul}</span></div>
+        <div className="item-overlay">
+          <small>{art.KATEGORI?.nama_kategori}</small>
+          <span>{art.judul}</span>
+        </div>
       </div>
-    )) : <p className="empty-msg">Belum ada karya.</p>}
+    )) : <p className="empty-msg">Belum ada karya yang diunggah.</p>}
   </section>
 );
 
-//  formu Unggah Karya
+// --- Form Edit Profil (LOGIKA TANPA RELOAD & ANTI-CACHE) ---
+const EditProfileForm = ({ user, onSuccess }) => {
+    const [editData, setEditData] = useState({ 
+      username: user.username || "", 
+      bio: user.bio || "", 
+      foto_file: null 
+    });
+    const [updating, setUpdating] = useState(false);
+
+    const handleUpdate = async (e) => {
+        e.preventDefault();
+        setUpdating(true);
+        try {
+            let finalFotoUrl = user.foto_url;
+
+            if (editData.foto_file) {
+                const fileExt = editData.foto_file.name.split('.').pop();
+                // Gunakan timestamp agar nama file selalu unik di storage
+                const fileName = `avatar_${user.id_user}_${Date.now()}.${fileExt}`;
+                
+                const { error: uploadError } = await sb.storage
+                  .from('uploads')
+                  .upload(fileName, editData.foto_file);
+                
+                if (uploadError) throw uploadError;
+
+                const { data } = sb.storage.from('uploads').getPublicUrl(fileName);
+                // Tambahkan query string ?t= agar browser tidak mengambil dari cache
+                finalFotoUrl = `${data.publicUrl}?t=${new Date().getTime()}`;
+            }
+
+            const { error: dbError } = await sb.from('USER')
+              .update({ 
+                username: editData.username, 
+                bio: editData.bio, 
+                foto_url: finalFotoUrl 
+              })
+              .eq('id_user', user.id_user);
+
+            if (dbError) throw dbError;
+
+            toast.success("Profil diperbarui! ✨");
+            onSuccess({
+              username: editData.username,
+              bio: editData.bio,
+              foto_url: finalFotoUrl
+            });
+
+        } catch (err) { 
+          toast.error("Gagal: " + err.message); 
+        } finally { 
+          setUpdating(false); 
+        }
+    };
+
+    return (
+        <form className="form-manage" onSubmit={handleUpdate}>
+            <h3>Edit Profil</h3>
+            <div className="input-group">
+              <input type="file" accept="image/*" onChange={e => setEditData({...editData, foto_file: e.target.files[0]})} />
+            </div>
+            <div className="input-group">
+              <input type="text" placeholder='Username' value={editData.username} onChange={e => setEditData({...editData, username: e.target.value})} />
+            </div>
+            <div className="input-group">
+              <textarea placeholder='Bio' value={editData.bio} onChange={e => setEditData({...editData, bio: e.target.value})} />
+            </div>
+            <button type="submit" disabled={updating}>
+              {updating ? "Menyimpan..." : "Simpan Perubahan"}
+            </button>
+        </form>
+    );
+};
+
+// ungah karya
 const UploadWorkForm = ({ user, categories, onSuccess }) => {
     const [form, setForm] = useState({ judul: "", deskripsi: "", file: null, id_kategori: "" });
     const [upLoading, setUpLoading] = useState(false);
@@ -149,9 +219,10 @@ const UploadWorkForm = ({ user, categories, onSuccess }) => {
       if (!form.file) return toast.error("Pilih file karya!");
       setUpLoading(true);
       try {
-        const fileName = `${Date.now()}_${form.file.name}`;
+        const fileName = `art_${Date.now()}_${form.file.name}`;
         const { error: storageErr } = await sb.storage.from('artworks').upload(fileName, form.file);
         if (storageErr) throw storageErr;
+        
         const { data } = sb.storage.from('artworks').getPublicUrl(fileName);
         const { error: dbErr } = await sb.from('KARYA').insert([{
           id_user: user.id_user,
@@ -161,8 +232,9 @@ const UploadWorkForm = ({ user, categories, onSuccess }) => {
           file_path: data.publicUrl,
           status: 'menunggu'
         }]);
+
         if (dbErr) throw dbErr;
-        toast.success("Karya berhasil dikirim!");
+        toast.success("Karya terkirim! Mohon tunggu persetujuan.");
         onSuccess();
       } catch (err) { toast.error(err.message); }
       finally { setUpLoading(false); }
@@ -170,75 +242,16 @@ const UploadWorkForm = ({ user, categories, onSuccess }) => {
   
     return (
       <form className="form-manage" onSubmit={handleUpload}>
-        <h3>Unggah Karya Baru</h3>
-        <input type="text" placeholder="Judul" required onChange={e => setForm({...form, judul: e.target.value})} />
-        <textarea placeholder="Deskripsi..." onChange={e => setForm({...form, deskripsi: e.target.value})} />
-        <select required onChange={e => setForm({...form, id_kategori: e.target.value})}>
-          <option value="">Kategori</option>
+        <h3>Unggah Karya</h3>
+        <input type="text" placeholder="Judul Karya" required onChange={e => setForm({...form, judul: e.target.value})} />
+        <textarea placeholder="Deskripsi karya..." onChange={e => setForm({...form, deskripsi: e.target.value})} />
+        <select required value={form.id_kategori} onChange={e => setForm({...form, id_kategori: e.target.value})}>
+          <option value="">-- Pilih Kategori --</option>
           {categories.map(c => <option key={c.id_kategori} value={c.id_kategori}>{c.nama_kategori}</option>)}
         </select>
         <input type="file" accept="image/*" required onChange={e => setForm({...form, file: e.target.files[0]})} />
-        <button type="submit" disabled={upLoading}>{upLoading ? "Mengirim..." : "Kirim"}</button>
+        <button type="submit" disabled={upLoading}>{upLoading ? "Mengirim..." : "Kirim Sekarang"}</button>
       </form>
-    );
-};
-
-const EditProfileForm = ({ user, onSuccess }) => {
-    const [editData, setEditData] = useState({ username: user.username || "", bio: user.bio || "", foto_file: null });
-    const [updating, setUpdating] = useState(false);
-
-    const handleUpdate = async (e) => {
-        e.preventDefault();
-        setUpdating(true);
-        try {
-            let finalFotoUrl = user.foto_url;
-            if (editData.foto_file) {
-                const fileName = `avatar_${user.id_user}_${Date.now()}`;
-                await sb.storage.from('uploads').upload(fileName, editData.foto_file);
-                const { data } = sb.storage.from('uploads').getPublicUrl(fileName);
-                finalFotoUrl = data.publicUrl;
-            }
-            await sb.from('USER').update({ username: editData.username, bio: editData.bio, foto_url: finalFotoUrl }).eq('id_user', user.id_user);
-            onSuccess();
-        } catch (err) { toast.error(err.message); }
-        finally { setUpdating(false); }
-    };
-
-    return (
-        <form className="form-manage" onSubmit={handleUpdate}>
-            <h3>Edit Profil</h3>
-            <input type="file" onChange={e => setEditData({...editData, foto_file: e.target.files[0]})} />
-            <input type="text" value={editData.username} onChange={e => setEditData({...editData, username: e.target.value})} />
-            <textarea value={editData.bio} onChange={e => setEditData({...editData, bio: e.target.value})} />
-            <button type="submit" disabled={updating}>Simpan</button>
-        </form>
-    );
-};
-
-const AdminApprovalPanel = () => {
-    const [pendingArts, setPendingArts] = useState([]);
-    const fetchPending = async () => {
-        const { data } = await sb.from('KARYA').select('*, USER(username)').eq('status', 'menunggu');
-        setPendingArts(data || []);
-    };
-    useEffect(() => { fetchPending(); }, []);
-    const handleApprove = async (id) => {
-        const { error } = await sb.from('KARYA').update({ status: 'publik' }).eq('id_karya', id);
-        if (!error) { toast.success("Karya disetujui!"); fetchPending(); }
-    };
-
-    return (
-        <div className="admin-panel">
-            {pendingArts.map(art => (
-                <div key={art.id_karya} className="admin-card">
-                    <img src={art.file_path} alt="karya" />
-                    <div>
-                        <h4>{art.judul}</h4>
-                        <button onClick={() => handleApprove(art.id_karya)}>Setujui ✅</button>
-                    </div>
-                </div>
-            ))}
-        </div>
     );
 };
 

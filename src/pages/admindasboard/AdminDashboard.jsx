@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { sb } from '../../api/supabaseClient';
 import './AdminDashboard.css';
 import { fetchAllCommentsAdmin, deleteComment } from '../../api/interaksi';
 import { Toaster, toast } from 'react-hot-toast';
-import { MdLogout, MdPeople, MdPalette, MdChat, MdFavorite, MdDelete, MdCheckCircle, MdCancel } from "react-icons/md";
+import { MdLogout, MdPeople, MdPalette, MdChat, MdFavorite, MdDelete } from "react-icons/md";
 
 const AdminDashboard = ({ onLogout }) => {
   const [currentView, setCurrentView] = useState('validasi'); 
@@ -11,50 +11,39 @@ const AdminDashboard = ({ onLogout }) => {
   const [moderasiComments, setModerasiComments] = useState([]); 
   const [students, setStudents] = useState([]);
   const [stats, setStats] = useState({ likes: 0, comments: 0, totalSiswa: 0 });
-  const [loading, setLoading] = useState(true);
+  
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const fetchAdminData = useCallback(async () => {
+  const hasFetchedData = useRef(false);
+
+  const fetchAdminData = useCallback(async (showSilent = false) => {
     try {
-      setLoading(true);
-      //ambil karya status 'menunggu'
-      const { data: artworks, error: artError } = await sb
-        .from('KARYA')
-        .select(`*,USER!KARYA_id_user_fkey ( nama_lengkap )`)
-        .eq('status', 'menunggu');
+      if (!showSilent) setIsInitialLoading(true);
       
-      if (artError) throw artError;
+      const [artworksRes, usersRes, likesRes, commentsRes] = await Promise.all([
+        sb.from('KARYA').select(`*, USER!KARYA_id_user_fkey ( nama_lengkap )`).eq('status', 'menunggu'),
+        sb.from('USER').select('*').eq('role', 'siswa'),
+        sb.from('INTERAKSI').select('*', { count: 'exact', head: true }).eq('jenis_interaksi', 'like'),
+        sb.from('INTERAKSI').select('*', { count: 'exact', head: true }).eq('jenis_interaksi', 'komentar')
+      ]);
 
-      // daftar siswa
-      const { data: userList, error: userError } = await sb
-        .from('USER')
-        .select('*')
-        .eq('role', 'siswa');
+      if (artworksRes.error) throw artworksRes.error;
 
-      if (userError) throw userError;
-
-      //Laporan Aktivitas
-      const { count: likeCount } = await sb.from('INTERAKSI')
-        .select('*', { count: 'exact', head: true })
-        .eq('jenis_interaksi', 'like');
-        
-      const { count: commentCount } = await sb.from('INTERAKSI')
-        .select('*', { count: 'exact', head: true })
-        .eq('jenis_interaksi', 'komentar');
-      
-      setPendingArtworks(artworks || []);
-      setStudents(userList || []);
+      setPendingArtworks(artworksRes.data || []);
+      setStudents(usersRes.data || []);
       setStats({ 
-        likes: likeCount || 0, 
-        comments: commentCount || 0, 
-        totalSiswa: userList?.length || 0 
+        likes: likesRes.count || 0, 
+        comments: commentsRes.count || 0, 
+        totalSiswa: usersRes.data?.length || 0 
       });
 
+      hasFetchedData.current = true;
     } catch (error) {
-      toast.error("Gagal ambil data: " + error.message);
+      toast.error("Gagal sinkronisasi data");
     } finally {
-      setLoading(false);
+      setIsInitialLoading(false);
     }
   }, []);
 
@@ -64,11 +53,16 @@ const AdminDashboard = ({ onLogout }) => {
   };
 
   useEffect(() => {
-    fetchAdminData();
-    if (currentView === 'moderasi') fetchModerasiComments();
+    if (!hasFetchedData.current) {
+      fetchAdminData();
+    }
+
+    if (currentView === 'moderasi' && moderasiComments.length === 0) {
+      fetchModerasiComments();
+    }
 
     const karyaChannel = sb.channel('admin-updates')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'KARYA' }, () => fetchAdminData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'KARYA' }, () => fetchAdminData(true))
       .subscribe();
 
     return () => { sb.removeChannel(karyaChannel); };
@@ -86,15 +80,25 @@ const AdminDashboard = ({ onLogout }) => {
 
     if (!error) {
       setPendingArtworks(prev => prev.filter(art => art.id_karya !== id));
-      toast.success(`Karya ${newStatus}!`);
+      toast.success(`Karya berhasil di-${newStatus}`);
     } else {
       toast.error("Gagal update status");
     }
     setActionLoading(null);
   };
 
+  const handleDeleteStudent = async (id, name) => {
+    if (window.confirm(`Hapus siswa ${name}? Semua karya siswa ini juga akan terhapus.`)) {
+      const { error } = await sb.from('USER').delete().eq('id_user', id);
+      if (!error) {
+        setStudents(prev => prev.filter(s => s.id_user !== id));
+        toast.success("Siswa berhasil dihapus");
+      }
+    }
+  };
+
   const handleDeleteComment = async (id) => {
-    if (window.confirm("Hapus komentar tidak pantas ini?")) {
+    if (window.confirm("Hapus komentar ini?")) {
       const { error } = await deleteComment(id);
       if (!error) {
         setModerasiComments(prev => prev.filter(c => c.id_interaksi !== id));
@@ -103,25 +107,18 @@ const AdminDashboard = ({ onLogout }) => {
     }
   };
 
-  const handleDeleteStudent = async (id, name) => {
-    if (window.confirm(`Hapus siswa ${name}? Semua karyanya juga akan terhapus.`)) {
-      const { error } = await sb.from('USER').delete().eq('id_user', id);
-      if (!error) {
-        setStudents(prev => prev.filter(s => s.id_user !== id));
-        toast.success("Data siswa berhasil dihapus");
-      }
-    }
-  };
-
-  if (loading) return <div className="loader-container"><div className="loader"></div></div>;
+  if (isInitialLoading) return <div className="loader-container"><div className="loader"></div></div>;
 
   return (
     <div className="admin-wrapper">
       <Toaster position="top-right" />
       <nav className="admin-navbar">
         <div className="nav-container">
-          <div className="nav-logo">📊 <span>Admin Galeri</span></div>
+          <div className="nav-logo" onClick={() => setCurrentView('validasi')} style={{cursor:'pointer'}}>
+             <span>Admin Galeri</span>
+          </div>
           <ul className={`nav-links ${isMenuOpen ? 'active' : ''}`}>
+            
             <li className={currentView === 'validasi' ? 'active' : ''} 
                 onClick={() => { setCurrentView('validasi'); setIsMenuOpen(false); }}>Validasi</li>
             <li className={currentView === 'moderasi' ? 'active' : ''} 
@@ -139,9 +136,8 @@ const AdminDashboard = ({ onLogout }) => {
       </nav>
 
       <main className="admin-main">
-        {/* Aktivitas*/}
         <section className="stats-section">
-          <h2 className="section-title"> Laporan Aktivitas Galeri</h2>
+          <h2 className="section-title">Laporan Aktivitas Galeri</h2>
           <div className="stats-grid">
             <div className="stat-card">
               <div className="stat-icon purple"><MdPeople /></div>
@@ -162,83 +158,91 @@ const AdminDashboard = ({ onLogout }) => {
           </div>
         </section>
 
-        {/*validasi karya*/}
-        {currentView === 'validasi' && (
-          <section className="admin-section fade-in">
-            <h2 className="section-title">✅ Validasi Antrean</h2>
-            <div className="validation-list">
-              {pendingArtworks.length > 0 ? pendingArtworks.map((art) => (
-                <div key={art.id_karya} className="val-card">
-                  <div className="val-img-wrapper">
-                    <img src={art.file_path || "https://via.placeholder.com/150"} alt="karya" />
-                  </div>
-                  <div className="val-details">
-                    <h4>{art.judul}</h4>
-                    <p className="author">Oleh: <strong>{art.USER?.nama_lengkap}</strong></p>
-                    <p className="desc">{art.deskripsi || "Siswa tidak memberikan deskripsi."}</p>
-                    <div className="val-actions">
-                      <button className="btn-app" onClick={() => handleAction(art.id_karya, 'publik')} disabled={actionLoading === art.id_karya}>Setujui</button>
-                      <button className="btn-rej" onClick={() => handleAction(art.id_karya, 'ditolak')} disabled={actionLoading === art.id_karya}>Tolak</button>
+        <div className="content-area">
+            {currentView === 'validasi' && (
+              <section className="admin-section fade-in">
+                <h2 className="section-title"> Validasi Antrean</h2>
+                <div className="validation-list">
+                  {pendingArtworks.length > 0 ? pendingArtworks.map((art) => (
+                    <div key={art.id_karya} className="val-card">
+                      <div className="val-img-wrapper">
+                        <img src={art.file_path || "https://via.placeholder.com/150"} alt="karya" loading="lazy" />
+                        {/* KATEGORI DI ATAS GAMBAR */}
+                        <span className="category-badge">{art.kategori || 'Umum'}</span>
+                      </div>
+                      <div className="val-details">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <h4>{art.judul}</h4>
+                          {/* KATEGORI SEBAGAI TEKS KECIL */}
+                          <span className="cat-text-inline">{art.kategori}</span>
+                        </div>
+                        <p className="author">Oleh: <strong>{art.USER?.nama_lengkap}</strong></p>
+                        <p className="desc">{art.deskripsi || "Siswa tidak memberikan deskripsi."}</p>
+                        <div className="val-actions">
+                          <button className="btn-app" onClick={() => handleAction(art.id_karya, 'publik')} disabled={actionLoading === art.id_karya}>
+                             {actionLoading === art.id_karya ? '...' : 'Setujui'}
+                          </button>
+                          <button className="btn-rej" onClick={() => handleAction(art.id_karya, 'ditolak')} disabled={actionLoading === art.id_karya}>Tolak</button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )) : <div className="empty-state">Semua karya sudah divalidasi! ✨</div>}
                 </div>
-              )) : <div className="empty-state">Semua karya bersih!</div>}
-            </div>
-          </section>
-        )}
+              </section>
+            )}
 
-        {/* Komentar*/}
-        {currentView === 'moderasi' && (
-          <section className="admin-section fade-in">
-            <h2 className="section-title">🛡️ Moderasi Komentar</h2>
-            <div className="table-container">
-              <table className="admin-table">
-                <thead>
-                  <tr><th>User</th><th>Komentar</th><th>Karya</th><th>Aksi</th></tr>
-                </thead>
-                <tbody>
-                  {moderasiComments.map((com) => (
-                    <tr key={com.id_interaksi}>
-                      <td>{com.USER?.nama_lengkap}</td>
-                      <td><em>"{com.isi_komentar}"</em></td>
-                      <td>{com.KARYA?.judul}</td>
-                      <td>
-                        <button className="btn-rej-row" onClick={() => handleDeleteComment(com.id_interaksi)}>Hapus</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
+            {currentView === 'moderasi' && (
+              <section className="admin-section fade-in">
+                <h2 className="section-title"> Moderasi Komentar</h2>
+                <div className="table-container">
+                  <table className="admin-table">
+                    <thead>
+                      <tr><th>User</th><th>Komentar</th><th>Karya</th><th>Aksi</th></tr>
+                    </thead>
+                    <tbody>
+                      {moderasiComments.map((com) => (
+                        <tr key={com.id_interaksi}>
+                          <td>{com.USER?.nama_lengkap}</td>
+                          <td><em>"{com.isi_komentar}"</em></td>
+                          <td>{com.KARYA?.judul}</td>
+                          <td>
+                            <button className="btn-rej-row" onClick={() => handleDeleteComment(com.id_interaksi)}>Hapus</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {moderasiComments.length === 0 && <p className="empty-table">Tidak ada komentar untuk dimoderasi.</p>}
+                </div>
+              </section>
+            )}
 
-        {/*kelola data siswa*/}
-        {currentView === 'siswa' && (
-          <section className="admin-section fade-in">
-            <h2 className="section-title">👥 Kelola Data Siswa</h2>
-            <div className="table-container">
-              <table className="admin-table">
-                <thead>
-                  <tr><th>Nama</th><th>Username</th><th>Aksi</th></tr>
-                </thead>
-                <tbody>
-                  {students.map((std) => (
-                    <tr key={std.id_user}>
-                      <td>{std.nama_lengkap}</td>
-                      <td>@{std.username}</td>
-                      <td>
-                        <button className="btn-delete-row" onClick={() => handleDeleteStudent(std.id_user, std.nama_lengkap)}>
-                          <MdDelete size={18} /> Hapus
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
+            {currentView === 'siswa' && (
+              <section className="admin-section fade-in">
+                <h2 className="section-title"> Kelola Data Siswa</h2>
+                <div className="table-container">
+                  <table className="admin-table">
+                    <thead>
+                      <tr><th>Nama</th><th>Username</th><th>Aksi</th></tr>
+                    </thead>
+                    <tbody>
+                      {students.map((std) => (
+                        <tr key={std.id_user}>
+                          <td>{std.nama_lengkap}</td>
+                          <td>@{std.username}</td>
+                          <td>
+                            <button className="btn-delete-row" onClick={() => handleDeleteStudent(std.id_user, std.nama_lengkap)}>
+                              <MdDelete size={18} /> Hapus
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
+        </div>
       </main>
     </div>
   );
