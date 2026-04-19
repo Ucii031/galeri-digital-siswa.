@@ -2,32 +2,43 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { sb } from '../../api/supabaseClient';
 import './UserProfile.css';
 import { toast, Toaster } from 'react-hot-toast';
-import { IoArrowBackOutline } from "react-icons/io5";
+import { IoArrowBackOutline, IoTrashOutline, IoHeart } from "react-icons/io5";
 
 const UserProfile = ({ user, onBack, onUpdate, viewingUser = null }) => {
   const isOwnProfile = !viewingUser || viewingUser.id_user === user.id_user;
   const targetUser = viewingUser || user;
-  const isAdmin = user?.role === 'admin';
 
   const [activeTab, setActiveTab] = useState('karya'); 
   const [myArtworks, setMyArtworks] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedArt, setSelectedArt] = useState(null);
+  const [totalLikes, setTotalLikes] = useState(0); // State baru untuk total suka profil
 
   const fetchData = useCallback(async () => {
     if (!targetUser?.id_user) return;
     setLoading(true);
     try {
-      // Mengambil karya lengkap dengan nama kategori dari tabel KATEGORI
-      const { data: arts } = await sb
+      // Mengambil karya + Kategori + Hitung Like per karya
+      const { data: arts, error } = await sb
         .from('KARYA')
-        .select(`*, KATEGORI(nama_kategori)`)
+        .select(`
+          *, 
+          KATEGORI(nama_kategori),
+          INTERAKSI(count)
+        `)
         .eq('id_user', targetUser.id_user)
+        .eq('INTERAKSI.jenis_interaksi', 'like')
         .order('created_at', { ascending: false });
       
+      if (error) throw error;
+
       const filteredArts = isOwnProfile ? arts : arts.filter(a => a.status === 'publik');
       setMyArtworks(filteredArts || []);
+
+      // HITUNG TOTAL LIKE SELURUH KARYA UNTUK PROFIL
+      const total = arts.reduce((acc, curr) => acc + (curr.INTERAKSI?.[0]?.count || 0), 0);
+      setTotalLikes(total);
 
       const { data: cats } = await sb.from('KATEGORI').select('*');
       if (cats) setCategories(cats);
@@ -39,6 +50,26 @@ const UserProfile = ({ user, onBack, onUpdate, viewingUser = null }) => {
   }, [targetUser.id_user, isOwnProfile]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // FUNGSI HAPUS KARYA
+  const handleDelete = async (id_karya, filePath) => {
+    const confirmDelete = window.confirm("Hapus karya ini secara permanen?");
+    if (!confirmDelete) return;
+
+    try {
+      const { error: dbError } = await sb.from('KARYA').delete().eq('id_karya', id_karya);
+      if (dbError) throw dbError;
+
+      const fileName = filePath.split('/').pop();
+      await sb.storage.from('artworks').remove([fileName]);
+
+      toast.success("Karya dihapus! 🗑️");
+      setSelectedArt(null);
+      fetchData();
+    } catch (err) {
+      toast.error("Gagal hapus: " + err.message);
+    }
+  };
 
   return (
     <div className="profile-container">
@@ -54,6 +85,18 @@ const UserProfile = ({ user, onBack, onUpdate, viewingUser = null }) => {
         <div className="profile-text">
           <h2 className="profile-username">@{targetUser?.username || "siswa"}</h2>
           <p className="profile-bio">{targetUser?.bio || "SD Katolik 10 Santa Theresia Manado"}</p>
+          
+          {/* STATISTIK DI BAWAH BIO */}
+          <div className="profile-stats-row">
+            <div className="stat-item">
+              <strong>{myArtworks.length}</strong>
+              <span>Karya</span>
+            </div>
+            <div className="stat-item">
+              <strong>{totalLikes}</strong>
+              <span>Suka</span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -85,8 +128,8 @@ const UserProfile = ({ user, onBack, onUpdate, viewingUser = null }) => {
           <EditProfileForm 
             user={user} 
             onSuccess={(updatedData) => { 
-                if (onUpdate) onUpdate(updatedData); // Update Dashboard
-                setActiveTab('karya'); // Pindah tab otomatis
+                if (onUpdate) onUpdate(updatedData); 
+                setActiveTab('karya'); 
             }} 
           />
         ) : null}
@@ -97,9 +140,22 @@ const UserProfile = ({ user, onBack, onUpdate, viewingUser = null }) => {
         <div className="modal-overlay" onClick={() => setSelectedArt(null)}>
           <div className="modal-content-profile" onClick={(e) => e.stopPropagation()}>
             <button className="close-pop" onClick={() => setSelectedArt(null)}>✕</button>
+            
+            {isOwnProfile && (
+              <button className="btn-delete-art" onClick={() => handleDelete(selectedArt.id_karya, selectedArt.file_path)}>
+                <IoTrashOutline size={20} />
+              </button>
+            )}
+
             <img src={selectedArt.file_path} alt={selectedArt.judul} className="img-fluid-pop" />
+            
             <div className="pop-info">
-                <span className="pop-cat-badge">{selectedArt.KATEGORI?.nama_kategori || 'Umum'}</span>
+                <div className="pop-stats">
+                  <span className="pop-cat-badge">{selectedArt.KATEGORI?.nama_kategori || 'Umum'}</span>
+                  <span className="pop-like-count">
+                    <IoHeart color="#ff4d4d" /> {selectedArt.INTERAKSI?.[0]?.count || 0} Suka
+                  </span>
+                </div>
                 <h3>{selectedArt.judul}</h3>
                 <p>{selectedArt.deskripsi}</p>
                 <span className={`badge-status ${selectedArt.status}`}>
@@ -127,6 +183,9 @@ const GalleryGrid = ({ artworks, onItemClick }) => (
           }} 
         />
         <div className="item-overlay">
+          <div className="overlay-stats">
+             <IoHeart /> {art.INTERAKSI?.[0]?.count || 0}
+          </div>
           <small>{art.KATEGORI?.nama_kategori}</small>
           <span>{art.judul}</span>
         </div>
@@ -135,7 +194,7 @@ const GalleryGrid = ({ artworks, onItemClick }) => (
   </section>
 );
 
-// --- Form Edit Profil (LOGIKA TANPA RELOAD & ANTI-CACHE) ---
+// --- Form Edit Profil ---
 const EditProfileForm = ({ user, onSuccess }) => {
     const [editData, setEditData] = useState({ 
       username: user.username || "", 
@@ -149,45 +208,23 @@ const EditProfileForm = ({ user, onSuccess }) => {
         setUpdating(true);
         try {
             let finalFotoUrl = user.foto_url;
-
             if (editData.foto_file) {
                 const fileExt = editData.foto_file.name.split('.').pop();
-                // Gunakan timestamp agar nama file selalu unik di storage
                 const fileName = `avatar_${user.id_user}_${Date.now()}.${fileExt}`;
-                
-                const { error: uploadError } = await sb.storage
-                  .from('uploads')
-                  .upload(fileName, editData.foto_file);
-                
+                const { error: uploadError } = await sb.storage.from('uploads').upload(fileName, editData.foto_file);
                 if (uploadError) throw uploadError;
-
                 const { data } = sb.storage.from('uploads').getPublicUrl(fileName);
-                // Tambahkan query string ?t= agar browser tidak mengambil dari cache
                 finalFotoUrl = `${data.publicUrl}?t=${new Date().getTime()}`;
             }
-
             const { error: dbError } = await sb.from('USER')
-              .update({ 
-                username: editData.username, 
-                bio: editData.bio, 
-                foto_url: finalFotoUrl 
-              })
+              .update({ username: editData.username, bio: editData.bio, foto_url: finalFotoUrl })
               .eq('id_user', user.id_user);
 
             if (dbError) throw dbError;
-
             toast.success("Profil diperbarui! ✨");
-            onSuccess({
-              username: editData.username,
-              bio: editData.bio,
-              foto_url: finalFotoUrl
-            });
-
-        } catch (err) { 
-          toast.error("Gagal: " + err.message); 
-        } finally { 
-          setUpdating(false); 
-        }
+            onSuccess({ username: editData.username, bio: editData.bio, foto_url: finalFotoUrl });
+        } catch (err) { toast.error("Gagal: " + err.message); }
+        finally { setUpdating(false); }
     };
 
     return (
@@ -202,14 +239,12 @@ const EditProfileForm = ({ user, onSuccess }) => {
             <div className="input-group">
               <textarea placeholder='Bio' value={editData.bio} onChange={e => setEditData({...editData, bio: e.target.value})} />
             </div>
-            <button type="submit" disabled={updating}>
-              {updating ? "Menyimpan..." : "Simpan Perubahan"}
-            </button>
+            <button type="submit" disabled={updating}>{updating ? "Menyimpan..." : "Simpan Perubahan"}</button>
         </form>
     );
 };
 
-// ungah karya
+// --- Form Unggah Karya ---
 const UploadWorkForm = ({ user, categories, onSuccess }) => {
     const [form, setForm] = useState({ judul: "", deskripsi: "", file: null, id_kategori: "" });
     const [upLoading, setUpLoading] = useState(false);
@@ -232,9 +267,8 @@ const UploadWorkForm = ({ user, categories, onSuccess }) => {
           file_path: data.publicUrl,
           status: 'menunggu'
         }]);
-
         if (dbErr) throw dbErr;
-        toast.success("Karya terkirim! Mohon tunggu persetujuan.");
+        toast.success("Karya terkirim! Menunggu review.");
         onSuccess();
       } catch (err) { toast.error(err.message); }
       finally { setUpLoading(false); }

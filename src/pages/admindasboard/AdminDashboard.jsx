@@ -12,6 +12,8 @@ const AdminDashboard = ({ onLogout }) => {
   const [students, setStudents] = useState([]);
   const [stats, setStats] = useState({ likes: 0, comments: 0, totalSiswa: 0 });
   
+  // State Baru untuk Bulk Delete
+  const [selectedComments, setSelectedComments] = useState([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -68,6 +70,45 @@ const AdminDashboard = ({ onLogout }) => {
     return () => { sb.removeChannel(karyaChannel); };
   }, [fetchAdminData, currentView]);
 
+  // --- LOGIKA CHECKBOX MODERASI ---
+  const toggleSelect = (id) => {
+    setSelectedComments(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedComments.length === moderasiComments.length) {
+      setSelectedComments([]);
+    } else {
+      setSelectedComments(moderasiComments.map(c => c.id_interaksi));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedComments.length === 0) return;
+    
+    if (window.confirm(`Hapus ${selectedComments.length} komentar yang dipilih?`)) {
+      setActionLoading('bulk-delete');
+      try {
+        const { error } = await sb
+          .from('INTERAKSI')
+          .delete()
+          .in('id_interaksi', selectedComments);
+
+        if (error) throw error;
+
+        setModerasiComments(prev => prev.filter(c => !selectedComments.includes(c.id_interaksi)));
+        setSelectedComments([]);
+        toast.success(`${selectedComments.length} komentar berhasil dihapus!`);
+      } catch (error) {
+        toast.error("Gagal menghapus beberapa komentar");
+      } finally {
+        setActionLoading(null);
+      }
+    }
+  };
+
   const handleAction = async (id, newStatus) => {
     let alasan = null;
     if (newStatus === 'ditolak') {
@@ -102,6 +143,7 @@ const AdminDashboard = ({ onLogout }) => {
       const { error } = await deleteComment(id);
       if (!error) {
         setModerasiComments(prev => prev.filter(c => c.id_interaksi !== id));
+        setSelectedComments(prev => prev.filter(item => item !== id));
         toast.success("Komentar dihapus");
       }
     }
@@ -118,7 +160,6 @@ const AdminDashboard = ({ onLogout }) => {
              <span>Admin Galeri</span>
           </div>
           <ul className={`nav-links ${isMenuOpen ? 'active' : ''}`}>
-            
             <li className={currentView === 'validasi' ? 'active' : ''} 
                 onClick={() => { setCurrentView('validasi'); setIsMenuOpen(false); }}>Validasi</li>
             <li className={currentView === 'moderasi' ? 'active' : ''} 
@@ -167,13 +208,11 @@ const AdminDashboard = ({ onLogout }) => {
                     <div key={art.id_karya} className="val-card">
                       <div className="val-img-wrapper">
                         <img src={art.file_path || "https://via.placeholder.com/150"} alt="karya" loading="lazy" />
-                        {/* KATEGORI DI ATAS GAMBAR */}
                         <span className="category-badge">{art.kategori || 'Umum'}</span>
                       </div>
                       <div className="val-details">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <h4>{art.judul}</h4>
-                          {/* KATEGORI SEBAGAI TEKS KECIL */}
                           <span className="cat-text-inline">{art.kategori}</span>
                         </div>
                         <p className="author">Oleh: <strong>{art.USER?.nama_lengkap}</strong></p>
@@ -193,15 +232,41 @@ const AdminDashboard = ({ onLogout }) => {
 
             {currentView === 'moderasi' && (
               <section className="admin-section fade-in">
-                <h2 className="section-title"> Moderasi Komentar</h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <h2 className="section-title"> Moderasi Komentar</h2>
+                  {selectedComments.length > 0 && (
+                    <button className="btn-bulk-delete" onClick={handleBulkDelete} disabled={actionLoading === 'bulk-delete'}>
+                      <MdDelete size={18} /> Hapus ({selectedComments.length})
+                    </button>
+                  )}
+                </div>
                 <div className="table-container">
                   <table className="admin-table">
                     <thead>
-                      <tr><th>User</th><th>Komentar</th><th>Karya</th><th>Aksi</th></tr>
+                      <tr>
+                        <th width="40">
+                          <input 
+                            type="checkbox" 
+                            onChange={toggleSelectAll} 
+                            checked={moderasiComments.length > 0 && selectedComments.length === moderasiComments.length}
+                          />
+                        </th>
+                        <th>User</th>
+                        <th>Komentar</th>
+                        <th>Karya</th>
+                        <th>Aksi</th>
+                      </tr>
                     </thead>
                     <tbody>
                       {moderasiComments.map((com) => (
-                        <tr key={com.id_interaksi}>
+                        <tr key={com.id_interaksi} className={selectedComments.includes(com.id_interaksi) ? 'row-selected' : ''}>
+                          <td>
+                            <input 
+                              type="checkbox" 
+                              checked={selectedComments.includes(com.id_interaksi)}
+                              onChange={() => toggleSelect(com.id_interaksi)}
+                            />
+                          </td>
                           <td>{com.USER?.nama_lengkap}</td>
                           <td><em>"{com.isi_komentar}"</em></td>
                           <td>{com.KARYA?.judul}</td>

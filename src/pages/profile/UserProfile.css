@@ -5,7 +5,7 @@
     width: 100%;
     max-width: 100%; 
     margin: 0;
-    padding: 100px 5% 40px; /* Padding samping 5% agar tidak terlalu mepet */
+    padding: 100px 5% 40px; 
     min-height: 100vh;
     background-color: #f6f5f8;
     box-sizing: border-box;
@@ -23,10 +23,12 @@
     align-items: center;
     gap: 8px;
     color: #161823;
+    transition: 0.2s;
 }
+
 .btn-back-simple:hover {
     color: #fe2c55;
-    
+    transform: translateX(-3px);
 }
 
 /* ========================================
@@ -52,7 +54,7 @@
 .profile-username {
     font-size: 1.8rem;
     font-weight: 600;
-    margin: 0 0 8px 0;
+    margin: 0 0 4px 0;
     color: #161823;
 }
 
@@ -62,6 +64,30 @@
     line-height: 1.5;
     white-space: pre-wrap;
     max-width: 450px;
+    margin-bottom: 12px;
+}
+
+/* --- Statistik Suka & Karya --- */
+.profile-stats-row {
+    display: flex;
+    gap: 20px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.stat-item strong {
+    font-size: 1.1rem;
+    color: #161823;
+    font-weight: 700;
+}
+
+.stat-item span {
+    font-size: 0.8rem;
+    color: #8a8b91;
 }
 
 /* ========================================
@@ -96,7 +122,7 @@
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 2px;
+    height: 3px;
     background-color: #102cca;
 }
 
@@ -111,7 +137,7 @@
 
 .gallery-item-profile {
     position: relative;
-    aspect-ratio: 3 / 4;
+    aspect-ratio: 1 / 1; /* Diubah ke 1/1 agar grid rapi seperti profil IG/TikTok */
     background-color: #2b2828f7;
     overflow: hidden;
     cursor: pointer;
@@ -121,23 +147,11 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.4s ease, filter 0.3s ease;
+    transition: transform 0.4s ease;
 }
 
 .gallery-item-profile:hover img {
-    transform: scale(1.05);
-}
-
-.status-badge.pending {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    background: rgba(0, 0, 0, 0.6);
-    color: white;
-    font-size: 0.65rem;
-    padding: 4px 8px;
-    border-radius: 4px;
-    z-index: 2;
+    transform: scale(1.1);
 }
 
 .item-overlay {
@@ -145,17 +159,26 @@
     bottom: 0;
     left: 0;
     width: 100%;
-    padding: 25px 10px 10px;
-    background: linear-gradient(transparent, rgba(0,0,0,0.6));
+    padding: 20px 10px 10px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
     color: white;
-    font-size: 0.85rem;
-    font-weight: 600;
     opacity: 0;
     transition: opacity 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
 }
 
 .gallery-item-profile:hover .item-overlay {
     opacity: 1;
+}
+
+.overlay-stats {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9rem;
+    font-weight: bold;
 }
 
 /* ========================================
@@ -167,7 +190,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.9);
+    background: rgba(0, 0, 0, 0.85);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -182,51 +205,83 @@
     border-radius: 16px;
     overflow: hidden;
     position: relative;
-    animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: zoomIn 0.3s ease-out;
 }
 
-@keyframes zoomIn {
-    from { transform: scale(0.8); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
+.btn-delete-art {
+    position: absolute;
+    top: 15px;
+    right: 55px; /* Diletakkan sebelum tombol close */
+    background: rgba(255, 255, 255, 0.9);
+    color: #ff4d4d;
+    border: none;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.3s;
+    z-index: 10;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
-.img-fluid-pop {
-    width: 100%;
-    max-height: 70vh;
-    object-fit: cover;
-}
-
-.pop-info {
-    padding: 20px;
-}
-
-.pop-info h3 {
-    margin: 0 0 10px 0;
-    font-size: 1.2rem;
-}
-
-.pop-info p {
-    color: #444;
-    font-size: 0.95rem;
-    line-height: 1.4;
+.btn-delete-art:hover {
+    background: #ff4d4d;
+    color: white;
 }
 
 .close-pop {
     position: absolute;
     top: 15px;
     right: 15px;
-    background: rgba(0, 0, 0, 0.5);
-    color: white;
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
     border: none;
     border-radius: 50%;
-    width: 32px;
-    height: 32px;
+    width: 35px;
+    height: 35px;
     cursor: pointer;
-    font-size: 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 10;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.img-fluid-pop {
+    width: 100%;
+    max-height: 60vh;
+    object-fit: contain;
+    background: #f0f0f0;
+}
+
+.pop-info {
+    padding: 20px;
+}
+
+.pop-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.pop-like-count {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    color: #fe2c55;
+}
+
+.pop-cat-badge {
+    background: #eee;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
 }
 
 /* ========================================
@@ -240,87 +295,68 @@
     flex-direction: column;
     gap: 15px;
     margin-top: 20px;
+    border: 1px solid #ddd;
+}
+
+.form-manage input, .form-manage textarea, .form-manage select {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
 }
 
 .form-manage button {
     background-color: #190fac;
     color: white;
     border: none;
-    padding: 12px;
+    padding: 14px;
     border-radius: 8px;
     font-weight: 700;
     cursor: pointer;
+    transition: 0.3s;
+}
+
+.form-manage button:hover {
+    background-color: #102cca;
 }
 
 /* ========================================
    7. RESPONSIF (HP, TABLET, LAPTOP)
    ======================================== */
 
-/* HP (Mobile) */
 @media (max-width: 480px) {
     .profile-header-tiktok {
         flex-direction: column;
         text-align: center;
         gap: 15px;
     }
+    .profile-stats-row {
+        justify-content: center;
+    }
     .profile-username { font-size: 1.4rem; }
-    .avatar-wrapper img { width: 96px; height: 96px; }
-    .gallery-grid { grid-template-columns: repeat(3, 1fr); }
+    .avatar-wrapper img { 
+        width: 100px; 
+        height: 100px; 
+        margin-top: 60px;
+    }
+    .gallery-grid { grid-template-columns: repeat(3, 1fr); gap: 2px; }
+    .btn-back-simple { margin-top: -60px; }
 }
 
-/* Tablet */
-@media (min-width: 100vh) and (max-width: 100%) {
-    .gallery-grid { 
-        grid-template-columns: repeat(3, 1fr);
-        gap: 4px; 
-    }
-    .btn-back-simple {
-    position: sticky;
-    top: 40px;
-    left: 20px;
-    z-index: 9999;
-    }
-
-    .profile-container { 
-        max-width: 90%; 
-        padding-top: 90px;
-    }
-    .avatar-wrapper img {
-         width: 100px; 
-         height: 100px;
-         margin-left: 20%;
-        }
-    .profile-username { 
-        font-size: 1.6rem; 
-        margin-top: 70px;     
-    }
-}
-
-/* Laptop / Desktop */
 @media (min-width: 768px) {
     .profile-container { 
-        padding-top: 100px; 
+        max-width: 800px;
+        margin: 0 auto;
+        padding-top: 120px; 
     }
     .btn-back-simple {
-        position: sticky;
+        position: fixed;
         top: 40px;
-        margin-left: -10px;
-        z-index: 9999;
-}
-    .avatar-wrapper img {
-         width: 100px; 
-         height: 100px;
-         margin-left: 10%;
-        }
-        .profile-username { 
-        font-size: 1.6rem; 
-        margin-top: 70px; 
-        margin-left: -1%;
-        }
-    .gallery-grid { 
-        gap: 10px;   
-     }
-    .gallery-item-profile { 
-        border-radius: 4px;     
+        left: 5%;
     }
+    .gallery-grid { gap: 8px; }
+}
+
+@keyframes zoomIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
 }

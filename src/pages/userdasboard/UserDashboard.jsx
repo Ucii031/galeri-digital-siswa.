@@ -13,19 +13,45 @@ const UserDashboard = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // 1. STATE DATA USER LOKAL (Agar update foto/nama langsung sinkron)
   const [currentUserData, setCurrentUserData] = useState(user);
-
   const [selectedKarya, setSelectedKarya] = useState(null);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [loadingComments, setLoadingComments] = useState(false);
   const [viewingFriend, setViewingFriend] = useState(null);
 
+  // --- LOGIKA TOMBOL BACK HP (SINKRONISASI) ---
+  useEffect(() => {
+    const handleBackButton = (event) => {
+      // 1. Jika modal komentar terbuka, tutup modalnya saja
+      if (selectedKarya) {
+        setSelectedKarya(null);
+        // Penting: Bersihkan state agar tidak menumpuk
+        window.history.replaceState({ subView: 'beranda' }, ""); 
+      } 
+      // 2. Jika di halaman profil, kembali ke beranda
+      else if (currentView === 'profile' || currentView === 'friend-profile') {
+        setCurrentView('beranda');
+      }
+    };
+
+    window.addEventListener('popstate', handleBackButton);
+    return () => window.removeEventListener('popstate', handleBackButton);
+  }, [selectedKarya, currentView]);
+
+  // Fungsi navigasi yang mencatat history
+  const navigateTo = (view) => {
+    if (view !== currentView) {
+      window.history.pushState({ subView: view }, ""); 
+      setCurrentView(view);
+    }
+    setIsMenuOpen(false); 
+  };
+  // --------------------------------------------
+
   const fetchKarya = useCallback(async () => {
     try {
       setLoading(true);
-      // pangil kategori
       const { data, error } = await sb
         .from('KARYA')
         .select(`
@@ -53,17 +79,14 @@ const UserDashboard = ({ user, onLogout }) => {
     setCurrentUserData(prev => ({ ...prev, ...updatedData }));
   };
 
-  const navigateTo = (view) => {
-    setCurrentView(view);
-    setIsMenuOpen(false); 
-  };
-
   const handleViewFriendProfile = (friendData) => {
     setViewingFriend(friendData);
     navigateTo('friend-profile'); 
   };
 
   const handleOpenComments = async (karya) => {
+    // Tambahkan history dummy saat modal buka supaya tombol back HP bisa dipicu
+    window.history.pushState({ modal: 'open' }, ""); 
     setSelectedKarya(karya);
     setLoadingComments(true);
     const { data, error } = await fetchComments(karya.id_karya);
@@ -99,8 +122,13 @@ const UserDashboard = ({ user, onLogout }) => {
     }
   };
 
-  if (currentView === 'friend-profile') return <UserProfile user={currentUserData} viewingUser={viewingFriend} onBack={() => navigateTo('beranda')} />;
-  if (currentView === 'profile') return <UserProfile user={currentUserData} onBack={() => navigateTo('beranda')} onUpdate={handleUserUpdate} />;
+  // Render Sub-Views
+  if (currentView === 'friend-profile') {
+    return <UserProfile user={currentUserData} viewingUser={viewingFriend} onBack={() => navigateTo('beranda')} />;
+  }
+  if (currentView === 'profile') {
+    return <UserProfile user={currentUserData} onBack={() => navigateTo('beranda')} onUpdate={handleUserUpdate} />;
+  }
 
   const filteredKarya = karyaList.filter(item =>
     item.judul?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -171,14 +199,9 @@ const UserDashboard = ({ user, onLogout }) => {
                   <div key={art.id_karya} className="gallery-post-item">
                     <div className="gallery-media-wrapper">
                       <img src={art.file_path} alt={art.judul} className="gallery-media-img" />
-                      
-                      {/* TAMPILAN LABEL KATEGORI DI ATAS FOTO */}
                       {art.KATEGORI?.nama_kategori && (
-                        <span className="category-tag-badge">
-                          {art.KATEGORI.nama_kategori}
-                        </span>
+                        <span className="category-tag-badge">{art.KATEGORI.nama_kategori}</span>
                       )}
-                      
                       <div className="gallery-media-overlay"></div>
                     </div>
                     <div className="gallery-actions-side">
@@ -202,11 +225,11 @@ const UserDashboard = ({ user, onLogout }) => {
       )}
 
       {selectedKarya && (
-        <div className="modal-overlay" onClick={() => setSelectedKarya(null)}>
+        <div className="modal-overlay" onClick={() => { setSelectedKarya(null); window.history.back(); }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Komentar</h3>
-              <button className="close-modal" onClick={() => setSelectedKarya(null)}>✕</button>
+              <button className="close-modal" onClick={() => { setSelectedKarya(null); window.history.back(); }}>✕</button>
             </div>
             <div className="comments-list">
               {loadingComments ? (
