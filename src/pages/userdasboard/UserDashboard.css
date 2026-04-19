@@ -382,7 +382,7 @@ body {
     margin-bottom: 5px;
 }
 
-.art-post-title { font-size: 1rem; margin-bottom: 8px; font-height: normal; }
+.art-post-title { font-size: 1rem; margin-bottom: 8px; font-weight: normal; }
 .art-post-desc { font-size: 0.9rem; opacity: 0.8; line-height: 1.4; }
 .pop-cat-badge { display: inline-block; background: #ffffff; color: #000000; padding: 3px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; margin-bottom: 8px; }
 .loading-state-fullscreen, .empty-msg-fullscreen { color: white; text-align: center; padding-top: 50vh; }
