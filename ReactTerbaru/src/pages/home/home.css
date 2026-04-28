@@ -1,0 +1,73 @@
+/* --- LAYER LATAR (BACKGROUND & ANIMASI) --- */
+.home-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  background-color: #5783D4;
+  overflow: hidden;
+}
+
+.img-taman, .img-logo, .img-mobil, .img-anak {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* --- ANIMASI --- */
+@keyframes mobilGoyang {
+  0% { transform: translate(-50%, -50%) translateY(0); }
+  50% { transform: translate(-48%, -50%) translateY(-5px); }
+  100% { transform: translate(-50%, -50%) translateY(0); }
+}
+
+@keyframes anakMelompat {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+  50% { transform: translate(-50%, -50%) translateY(-20px); }
+}
+
+/* --- UKURAN ASSETS --- */
+.img-taman { width: 85vmin; max-width: 450px; border-radius: 50%; border: 2px solid white; z-index: 5; }
+.img-logo { width: 55vmin; max-width: 340px; z-index: 10; }
+.img-mobil { width: 40vmin; margin-top: -190px; margin-left: -10px; z-index: 1; animation: mobilGoyang 3s infinite; }
+.img-anak { width: 50vmin; margin-top: -200px; margin-left: 70px; z-index: 2; animation: anakMelompat 2s infinite; }
+.img-awan { position: absolute; width: 110%; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 0; }
+
+/* --- TOMBOL START MISSION --- */
+.tombol-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin-top: 100px;
+  z-index: 150;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-start {
+  padding: 15px 40px;
+  border-radius: 50px;
+  border: 3px solid white;
+  background-color: #007BFF;
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  z-index: 150;
+}
+
+.btn-start:hover {
+  background-color: #0056b3;
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Tambahkan Media Queries khusus Home di sini jika diperlukan */
