@@ -263,6 +263,183 @@
   .val-card { flex-direction: column; }
   .val-img-wrapper { width: 100%; height: 180px; }
 }
+/* =========================================
+   4. VALIDATION & ARTWORK CARDS (REFINED)
+   ========================================= */
+
+/* Wadah utama daftar karya */
+.validation-list {
+  display: grid;
+  /* Menggunakan grid auto-fill agar jumlah kolom menyesuaikan lebar layar secara otomatis */
+  /* minmax(300px, 1fr) artinya lebar kartu minimal 300px, jika lebih luas akan membagi sisa ruang */
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 10px 0;
+}
+
+/* Desain Kartu Karya */
+.val-card {
+  background: var(--white);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column; /* Default: gambar di atas, teks di bawah */
+  box-shadow: var(--shadow-sm);
+  border: 1px solid #e2e8f0;
+  transition: var(--transition);
+}
+
+.val-card:hover {
+  transform: translateY(-5px); /* Efek melayang saat kursor di atas */
+  box-shadow: var(--shadow-md);
+}
+
+/* Bagian Gambar */
+.val-img-wrapper {
+  position: relative;
+  width: 100%;
+  height: 200px; /* Tinggi tetap agar grid terlihat rapi */
+  overflow: hidden;
+  background-color: #eee;
+}
+
+.val-img-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Gambar tidak gepeng, akan terpotong secara proporsional */
+  transition: transform 0.5s ease;
+}
+
+.val-card:hover .val-img-wrapper img {
+  transform: scale(1.05); /* Sedikit zoom saat hover */
+}
+
+/* Badge Kategori di atas gambar */
+.category-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px); /* Efek kaca kekinian */
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Detail Teks Karya */
+.val-details {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; /* Mengisi ruang sisa agar tombol aksi selalu di bawah */
+}
+
+.val-details h4 {
+  font-size: 1.1rem;
+  color: var(--primary-admin);
+  margin-bottom: 4px;
+}
+
+.cat-text-inline {
+  font-size: 0.75rem;
+  color: var(--accent);
+  background: #eff6ff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.author {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.desc {
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+  /* Membuat teks deskripsi maksimal 3 baris (Truncate) */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Area Tombol Aksi */
+.val-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: auto; /* Memaksa tombol ke bagian paling bawah kartu */
+}
+
+.val-actions button {
+  flex: 1; /* Membuat kedua tombol memiliki lebar yang sama */
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: var(--transition);
+}
+
+.btn-app {
+  background-color: var(--success);
+  color: white;
+}
+
+.btn-app:hover {
+  background-color: #16a34a;
+  filter: brightness(1.1);
+}
+
+.btn-rej {
+  background-color: #fee2e2;
+  color: var(--danger);
+}
+
+.btn-rej:hover {
+  background-color: var(--danger);
+  color: white;
+}
+
+/* State Jika Data Kosong */
+.empty-state {
+  grid-column: 1 / -1; /* Mengambil seluruh baris grid */
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 12px;
+  color: #64748b;
+  border: 2px dashed #e2e8f0;
+}
+
+/* =========================================
+   5. RESPONSIVE ADJUSTMENTS
+   ========================================= */
+
+@media (min-width: 769px) {
+  /* Di Desktop yang lebar, kita bisa buat kartu berbentuk horizontal jika diinginkan */
+  /* Namun, grid 3-4 kolom biasanya lebih efisien untuk admin */
+}
+
+@media (max-width: 480px) {
+  .validation-list {
+    grid-template-columns: 1fr; /* Di HP kecil, paksa 1 kolom saja */
+  }
+  
+  .val-img-wrapper {
+    height: 160px; /* Kurangi tinggi gambar di HP agar tidak terlalu panjang */
+  }
+
+  .section-title {
+    font-size: 1.2rem;
+  }
+}
 
 /* =========================================
    6. UTILITIES & ANIMATIONS
