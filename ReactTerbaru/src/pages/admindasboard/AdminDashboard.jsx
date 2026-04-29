@@ -3,7 +3,10 @@ import { sb } from '../../api/supabaseClient';
 import './AdminDashboard.css';
 import { fetchAllCommentsAdmin, deleteComment } from '../../api/interaksi';
 import { Toaster, toast } from 'react-hot-toast';
-import { MdLogout, MdPeople, MdPalette, MdChat, MdFavorite, MdDelete } from "react-icons/md";
+import { 
+  MdLogout, MdPeople, MdPalette, MdChat, MdFavorite, 
+  MdDelete, MdStar, MdEmojiEvents, MdWorkspacePremium, MdClose 
+} from "react-icons/md";
 
 const AdminDashboard = ({ onLogout }) => {
   const [currentView, setCurrentView] = useState('validasi'); 
@@ -12,8 +15,17 @@ const AdminDashboard = ({ onLogout }) => {
   const [students, setStudents] = useState([]);
   const [stats, setStats] = useState({ likes: 0, comments: 0, totalSiswa: 0 });
   
-  // State Baru untuk Bulk Delete
+  const [topRatedKarya, setTopRatedKarya] = useState([]);
+  const [pollingWinners, setPollingWinners] = useState([]);
+  
+  // State untuk Modal Profile
+  const [selectedProfile, setSelectedProfile] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+
+  // State untuk fitur Checkbox
   const [selectedComments, setSelectedComments] = useState([]);
+  const [selectedStudents, setSelectedStudents] = useState([]);
+
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -24,11 +36,14 @@ const AdminDashboard = ({ onLogout }) => {
     try {
       if (!showSilent) setIsInitialLoading(true);
       
-      const [artworksRes, usersRes, likesRes, commentsRes] = await Promise.all([
+      const [artworksRes, usersRes, likesRes, commentsRes, topKaryaRes, pollingRes] = await Promise.all([
         sb.from('KARYA').select(`*, USER!KARYA_id_user_fkey ( nama_lengkap )`).eq('status', 'menunggu'),
         sb.from('USER').select('*').eq('role', 'siswa'),
         sb.from('INTERAKSI').select('*', { count: 'exact', head: true }).eq('jenis_interaksi', 'like'),
-        sb.from('INTERAKSI').select('*', { count: 'exact', head: true }).eq('jenis_interaksi', 'komentar')
+        sb.from('INTERAKSI').select('*', { count: 'exact', head: true }).eq('jenis_interaksi', 'komentar'),
+        sb.from('KARYA').select(`*, USER!KARYA_id_user_fkey(nama_lengkap), INTERAKSI(count)`).eq('status', 'publik'),
+        // Mengambil data dari tabel POLLING sesuai struktur database Anda
+        sb.from('POLLING').select(`kategori_polling, id_target_siswa, USER:id_target_siswa(*)`)
       ]);
 
       if (artworksRes.error) throw artworksRes.error;
@@ -40,6 +55,33 @@ const AdminDashboard = ({ onLogout }) => {
         comments: commentsRes.count || 0, 
         totalSiswa: usersRes.data?.length || 0 
       });
+
+      const sortedKarya = (topKaryaRes.data || [])
+        .map(item => ({ ...item, likeCount: item.INTERAKSI[0]?.count || 0 }))
+        .sort((a, b) => b.likeCount - a.likeCount)
+        .slice(0, 5);
+      setTopRatedKarya(sortedKarya);
+
+      // Logika Polling dengan Case Sensitivity (Huruf Kapital di Awal)
+      if (pollingRes.data) {
+        const categories = ['Tercantik', 'Terganteng', 'Terpintar', 'Terajin', 'Terbaik', 'Termanis'];
+        const winners = categories.map(cat => {
+          const votesForCat = pollingRes.data.filter(p => p.kategori_polling === cat);
+          const counts = votesForCat.reduce((acc, curr) => {
+            if (!curr.USER) return acc;
+            const id = curr.id_target_siswa;
+            if (!acc[id]) {
+              acc[id] = { info: curr.USER, count: 0 };
+            }
+            acc[id].count++;
+            return acc;
+          }, {});
+
+          const topStudent = Object.values(counts).sort((a, b) => b.count - a.count)[0];
+          return { kategori: cat, student: topStudent?.info, totalSuara: topStudent?.count || 0 };
+        });
+        setPollingWinners(winners);
+      }
 
       hasFetchedData.current = true;
     } catch (error) {
@@ -55,13 +97,8 @@ const AdminDashboard = ({ onLogout }) => {
   };
 
   useEffect(() => {
-    if (!hasFetchedData.current) {
-      fetchAdminData();
-    }
-
-    if (currentView === 'moderasi' && moderasiComments.length === 0) {
-      fetchModerasiComments();
-    }
+    if (!hasFetchedData.current) fetchAdminData();
+    if (currentView === 'moderasi') fetchModerasiComments();
 
     const karyaChannel = sb.channel('admin-updates')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'KARYA' }, () => fetchAdminData(true))
@@ -70,55 +107,15 @@ const AdminDashboard = ({ onLogout }) => {
     return () => { sb.removeChannel(karyaChannel); };
   }, [fetchAdminData, currentView]);
 
-  // --- LOGIKA CHECKBOX MODERASI ---
-  const toggleSelect = (id) => {
-    setSelectedComments(prev => 
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedComments.length === moderasiComments.length) {
-      setSelectedComments([]);
-    } else {
-      setSelectedComments(moderasiComments.map(c => c.id_interaksi));
-    }
-  };
-
-  const handleBulkDelete = async () => {
-    if (selectedComments.length === 0) return;
-    
-    if (window.confirm(`Hapus ${selectedComments.length} komentar yang dipilih?`)) {
-      setActionLoading('bulk-delete');
-      try {
-        const { error } = await sb
-          .from('INTERAKSI')
-          .delete()
-          .in('id_interaksi', selectedComments);
-
-        if (error) throw error;
-
-        setModerasiComments(prev => prev.filter(c => !selectedComments.includes(c.id_interaksi)));
-        setSelectedComments([]);
-        toast.success(`${selectedComments.length} komentar berhasil dihapus!`);
-      } catch (error) {
-        toast.error("Gagal menghapus beberapa komentar");
-      } finally {
-        setActionLoading(null);
-      }
-    }
-  };
-
+  // Handler Actions
   const handleAction = async (id, newStatus) => {
     let alasan = null;
     if (newStatus === 'ditolak') {
       alasan = window.prompt("Berikan alasan penolakan:");
       if (!alasan) return;
     }
-
     setActionLoading(id);
     const { error } = await sb.from('KARYA').update({ status: newStatus, catatan_admin: alasan }).eq('id_karya', id);
-
     if (!error) {
       setPendingArtworks(prev => prev.filter(art => art.id_karya !== id));
       toast.success(`Karya berhasil di-${newStatus}`);
@@ -129,11 +126,11 @@ const AdminDashboard = ({ onLogout }) => {
   };
 
   const handleDeleteStudent = async (id, name) => {
-    if (window.confirm(`Hapus siswa ${name}? Semua karya siswa ini juga akan terhapus.`)) {
+    if (window.confirm(`Hapus siswa ${name}?`)) {
       const { error } = await sb.from('USER').delete().eq('id_user', id);
       if (!error) {
         setStudents(prev => prev.filter(s => s.id_user !== id));
-        toast.success("Siswa berhasil dihapus");
+        toast.success("Siswa dihapus");
       }
     }
   };
@@ -143,42 +140,65 @@ const AdminDashboard = ({ onLogout }) => {
       const { error } = await deleteComment(id);
       if (!error) {
         setModerasiComments(prev => prev.filter(c => c.id_interaksi !== id));
-        setSelectedComments(prev => prev.filter(item => item !== id));
         toast.success("Komentar dihapus");
       }
     }
   };
+
+  // Checkbox Handlers
+  const toggleSelectComment = (id) => setSelectedComments(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  const toggleSelectStudent = (id) => setSelectedStudents(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
 
   if (isInitialLoading) return <div className="loader-container"><div className="loader"></div></div>;
 
   return (
     <div className="admin-wrapper">
       <Toaster position="top-right" />
+
+      {/* MODAL DETAIL PROFIL */}
+      {showModal && selectedProfile && (
+        <div className="profile-modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="profile-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-modal" onClick={() => setShowModal(false)}><MdClose size={24}/></button>
+            <div className="profile-header-color"></div>
+            <div className="profile-body">
+              <img src={selectedProfile.foto_url || "https://via.placeholder.com/120"} alt="Profile" className="profile-large-img" />
+              <h2 className="profile-name">{selectedProfile.nama_lengkap}</h2>
+              <p className="profile-username">@{selectedProfile.username}</p>
+              <div className="profile-badge">
+                <MdEmojiEvents color="#f1c40f" />
+                <span>Pemenang {selectedProfile.category}</span>
+              </div>
+              <div className="profile-stats-mini">
+                <div className="stat-box">
+                  <strong>{selectedProfile.votes}</strong>
+                  <span>Total Suara</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <nav className="admin-navbar">
         <div className="nav-container">
           <div className="nav-logo" onClick={() => setCurrentView('validasi')} style={{cursor:'pointer'}}>
              <span>Admin Galeri</span>
           </div>
           <ul className={`nav-links ${isMenuOpen ? 'active' : ''}`}>
-            <li className={currentView === 'validasi' ? 'active' : ''} 
-                onClick={() => { setCurrentView('validasi'); setIsMenuOpen(false); }}>Validasi</li>
-            <li className={currentView === 'moderasi' ? 'active' : ''} 
-                onClick={() => { setCurrentView('moderasi'); setIsMenuOpen(false); }}>Moderasi</li>
-            <li className={currentView === 'siswa' ? 'active' : ''} 
-                onClick={() => { setCurrentView('siswa'); setIsMenuOpen(false); }}>Data Siswa</li>
-            <button className="btn-logout" onClick={onLogout}>
-              <MdLogout size={18} /> Keluar
-            </button>
+            <li className={currentView === 'validasi' ? 'active' : ''} onClick={() => {setCurrentView('validasi'); setIsMenuOpen(false)}}>Validasi</li>
+            <li className={currentView === 'laporan' ? 'active' : ''} onClick={() => {setCurrentView('laporan'); setIsMenuOpen(false)}}>Rating & Polling</li>
+            <li className={currentView === 'moderasi' ? 'active' : ''} onClick={() => {setCurrentView('moderasi'); setIsMenuOpen(false)}}>Moderasi</li>
+            <li className={currentView === 'siswa' ? 'active' : ''} onClick={() => {setCurrentView('siswa'); setIsMenuOpen(false)}}>Data Siswa</li>
+            <button className="btn-logout" onClick={onLogout}><MdLogout size={18} /> Keluar</button>
           </ul>
-          <button className="menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            {isMenuOpen ? '✕' : '☰'}
-          </button>
+          <button className="menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>{isMenuOpen ? '✕' : '☰'}</button>
         </div>
       </nav>
 
       <main className="admin-main">
+        {/* STATS SECTION - Tetap Muncul */}
         <section className="stats-section">
-          <h2 className="section-title">Laporan Aktivitas Galeri</h2>
           <div className="stats-grid">
             <div className="stat-card">
               <div className="stat-icon purple"><MdPeople /></div>
@@ -186,120 +206,138 @@ const AdminDashboard = ({ onLogout }) => {
             </div>
             <div className="stat-card">
               <div className="stat-icon blue"><MdPalette /></div>
-              <div className="stat-info"><h3>{pendingArtworks.length}</h3><p>Antrean Karya</p></div>
+              <div className="stat-info"><h3>{pendingArtworks.length}</h3><p>Antrean</p></div>
             </div>
             <div className="stat-card">
               <div className="stat-icon red"><MdFavorite /></div>
               <div className="stat-info"><h3>{stats.likes}</h3><p>Total Suka</p></div>
             </div>
-            <div className="stat-card">
-              <div className="stat-icon green"><MdChat /></div>
-              <div className="stat-info"><h3>{stats.comments}</h3><p>Komentar</p></div>
-            </div>
           </div>
         </section>
 
         <div className="content-area">
+            {/* VIEW: VALIDASI */}
             {currentView === 'validasi' && (
               <section className="admin-section fade-in">
-                <h2 className="section-title"> Validasi Antrean</h2>
+                <h2 className="section-title">Validasi Antrean</h2>
                 <div className="validation-list">
                   {pendingArtworks.length > 0 ? pendingArtworks.map((art) => (
                     <div key={art.id_karya} className="val-card">
                       <div className="val-img-wrapper">
-                        <img src={art.file_path || "https://via.placeholder.com/150"} alt="karya" loading="lazy" />
-                        <span className="category-badge">{art.kategori || 'Umum'}</span>
+                        <img src={art.file_path} alt="karya" />
                       </div>
                       <div className="val-details">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <h4>{art.judul}</h4>
-                          <span className="cat-text-inline">{art.kategori}</span>
-                        </div>
-                        <p className="author">Oleh: <strong>{art.USER?.nama_lengkap}</strong></p>
-                        <p className="desc">{art.deskripsi || "Siswa tidak memberikan deskripsi."}</p>
+                        <h4>{art.judul}</h4>
+                        <p>Oleh: <strong>{art.USER?.nama_lengkap}</strong></p>
                         <div className="val-actions">
-                          <button className="btn-app" onClick={() => handleAction(art.id_karya, 'publik')} disabled={actionLoading === art.id_karya}>
-                             {actionLoading === art.id_karya ? '...' : 'Setujui'}
-                          </button>
-                          <button className="btn-rej" onClick={() => handleAction(art.id_karya, 'ditolak')} disabled={actionLoading === art.id_karya}>Tolak</button>
+                          <button className="btn-app" onClick={() => handleAction(art.id_karya, 'publik')}>Setujui</button>
+                          <button className="btn-rej" onClick={() => handleAction(art.id_karya, 'ditolak')}>Tolak</button>
                         </div>
                       </div>
                     </div>
-                  )) : <div className="empty-state">Semua karya sudah divalidasi! ✨</div>}
+                  )) : <div className="empty-state">Antrean kosong ✨</div>}
                 </div>
               </section>
             )}
 
+            {/* VIEW: RATING & POLLING */}
+            {currentView === 'laporan' && (
+              <div className="report-container fade-in">
+                <div className="report-grid">
+                  <div className="report-card ranking-section">
+                    <h3><MdStar /> Karya Terpopuler</h3>
+                    <div className="rating-list">
+                      {topRatedKarya.map((art, idx) => (
+                        <div key={art.id_karya} className={`rating-card rank-${idx + 1}`}>
+                          <img src={art.file_path} alt="karya" />
+                          <div className="rating-details">
+                            <h4>{art.judul}</h4>
+                            <span className="like-pill"><MdFavorite /> {art.likeCount} Suka</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="report-card polling-section">
+                    <h3><MdEmojiEvents /> Hasil Polling Siswa</h3>
+                    <div className="polling-winner-grid">
+                      {pollingWinners.map((win, idx) => (
+                        <div 
+                          key={idx} 
+                          className="winner-mini-card"
+                          onClick={() => win.student && setSelectedProfile({...win.student, category: win.kategori, votes: win.totalSuara}, setShowModal(true))}
+                          style={{ cursor: win.student ? 'pointer' : 'default' }}
+                        >
+                          <div className="category-label">{win.kategori}</div>
+                          {win.student ? (
+                            <div className="winner-info">
+                              <img src={win.student.foto_url || "https://via.placeholder.com/50"} alt="pemenang" />
+                              <div><strong>{win.student.nama_lengkap}</strong><p>{win.totalSuara} Suara</p></div>
+                            </div>
+                          ) : <p className="no-data">Belum ada suara</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* VIEW: MODERASI KOMENTAR */}
             {currentView === 'moderasi' && (
               <section className="admin-section fade-in">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                  <h2 className="section-title"> Moderasi Komentar</h2>
-                  {selectedComments.length > 0 && (
-                    <button className="btn-bulk-delete" onClick={handleBulkDelete} disabled={actionLoading === 'bulk-delete'}>
-                      <MdDelete size={18} /> Hapus ({selectedComments.length})
-                    </button>
-                  )}
-                </div>
+                <h2 className="section-title">Moderasi Komentar</h2>
                 <div className="table-container">
                   <table className="admin-table">
                     <thead>
                       <tr>
-                        <th width="40">
-                          <input 
-                            type="checkbox" 
-                            onChange={toggleSelectAll} 
-                            checked={moderasiComments.length > 0 && selectedComments.length === moderasiComments.length}
-                          />
-                        </th>
+                        <th style={{ width: '50px', textAlign: 'center' }}>Pilih</th>
                         <th>User</th>
                         <th>Komentar</th>
-                        <th>Karya</th>
                         <th>Aksi</th>
                       </tr>
                     </thead>
                     <tbody>
                       {moderasiComments.map((com) => (
-                        <tr key={com.id_interaksi} className={selectedComments.includes(com.id_interaksi) ? 'row-selected' : ''}>
-                          <td>
-                            <input 
-                              type="checkbox" 
-                              checked={selectedComments.includes(com.id_interaksi)}
-                              onChange={() => toggleSelect(com.id_interaksi)}
-                            />
+                        <tr key={com.id_interaksi}>
+                          <td style={{ textAlign: 'center' }}>
+                            <input type="checkbox" checked={selectedComments.includes(com.id_interaksi)} onChange={() => toggleSelectComment(com.id_interaksi)} />
                           </td>
                           <td>{com.USER?.nama_lengkap}</td>
-                          <td><em>"{com.isi_komentar}"</em></td>
-                          <td>{com.KARYA?.judul}</td>
-                          <td>
-                            <button className="btn-rej-row" onClick={() => handleDeleteComment(com.id_interaksi)}>Hapus</button>
-                          </td>
+                          <td>"{com.isi_komentar}"</td>
+                          <td><button className="btn-rej-row" onClick={() => handleDeleteComment(com.id_interaksi)}>Hapus</button></td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  {moderasiComments.length === 0 && <p className="empty-table">Tidak ada komentar untuk dimoderasi.</p>}
                 </div>
               </section>
             )}
 
+            {/* VIEW: DATA SISWA */}
             {currentView === 'siswa' && (
               <section className="admin-section fade-in">
-                <h2 className="section-title"> Kelola Data Siswa</h2>
+                <h2 className="section-title">Kelola Data Siswa</h2>
                 <div className="table-container">
                   <table className="admin-table">
                     <thead>
-                      <tr><th>Nama</th><th>Username</th><th>Aksi</th></tr>
+                      <tr>
+                        <th style={{ width: '50px', textAlign: 'center' }}>Pilih</th>
+                        <th>Nama</th>
+                        <th>Username</th>
+                        <th>Aksi</th>
+                      </tr>
                     </thead>
                     <tbody>
                       {students.map((std) => (
                         <tr key={std.id_user}>
+                          <td style={{ textAlign: 'center' }}>
+                            <input type="checkbox" checked={selectedStudents.includes(std.id_user)} onChange={() => toggleSelectStudent(std.id_user)} />
+                          </td>
                           <td>{std.nama_lengkap}</td>
                           <td>@{std.username}</td>
-                          <td>
-                            <button className="btn-delete-row" onClick={() => handleDeleteStudent(std.id_user, std.nama_lengkap)}>
-                              <MdDelete size={18} /> Hapus
-                            </button>
-                          </td>
+                          <td><button className="btn-delete-row" onClick={() => handleDeleteStudent(std.id_user, std.nama_lengkap)}><MdDelete /> Hapus</button></td>
                         </tr>
                       ))}
                     </tbody>

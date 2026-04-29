@@ -456,3 +456,181 @@
   border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; 
 }
 @keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* Styling Laporan (Rating & Polling) */
+.report-container {
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 15px;
+}
+
+.report-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.report-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 900px) {
+    .report-grid { grid-template-columns: 1fr; }
+}
+
+.report-card {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.rating-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    background: #fff;
+    border: 1px solid #eee;
+    transition: 0.3s;
+}
+
+.rating-card:hover { transform: translateX(8px); border-color: #9b59b6; }
+
+.rank-number { font-weight: bold; width: 25px; color: #bdc3c7; }
+.rank-1 .rank-number { color: #f1c40f; font-size: 1.4rem; }
+
+.rating-card img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; }
+
+.like-pill {
+    font-size: 0.8rem;
+    background: #fff0f0;
+    color: #e74c3c;
+    padding: 3px 8px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: fit-content;
+}
+
+.polling-winner-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.winner-mini-card {
+    padding: 12px;
+    background: #fdfdfd;
+    border-left: 4px solid #9b59b6;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.category-label {
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: #9b59b6;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.winner-info { display: flex; align-items: center; gap: 10px; }
+.winner-info img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #9b59b6; }
+.winner-info strong { font-size: 0.85rem; }
+.winner-info p { font-size: 0.75rem; color: #7f8c8d; margin: 0; }
+/* Modal Overlay */
+.profile-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+/* Modal Box */
+.profile-modal-content {
+    background: white;
+    width: 350px;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    animation: zoomIn 0.3s ease;
+}
+
+@keyframes zoomIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.profile-header-color {
+    height: 100px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.profile-large-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 5px solid white;
+    margin-top: -60px;
+    object-fit: cover;
+    background: #eee;
+}
+
+.profile-body {
+    padding: 20px;
+}
+
+.profile-name {
+    margin: 10px 0 5px;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+.profile-username {
+    color: #777;
+    margin-bottom: 20px;
+}
+
+.profile-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff9e6;
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: 1px solid #f1c40f;
+    color: #f39c12;
+    font-weight: bold;
+}
+
+.close-modal {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.winner-mini-card:hover {
+    background: #f0f4ff;
+    transform: translateY(-3px);
+    transition: 0.3s;
+}

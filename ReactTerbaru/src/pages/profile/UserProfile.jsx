@@ -13,17 +13,18 @@ const UserProfile = ({ user, onBack, onUpdate, viewingUser = null }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedArt, setSelectedArt] = useState(null);
-  const [totalLikes, setTotalLikes] = useState(0); // State baru untuk total suka profil
+  const [totalLikes, setTotalLikes] = useState(0);
 
   const fetchData = useCallback(async () => {
     if (!targetUser?.id_user) return;
     setLoading(true);
     try {
-      // Mengambil karya + Kategori + Hitung Like per karya
+      // PERUBAHAN: Menambahkan 'catatan_admin' ke dalam query select
       const { data: arts, error } = await sb
         .from('KARYA')
         .select(`
           *, 
+          catatan_admin,
           KATEGORI(nama_kategori),
           INTERAKSI(count)
         `)
@@ -36,7 +37,6 @@ const UserProfile = ({ user, onBack, onUpdate, viewingUser = null }) => {
       const filteredArts = isOwnProfile ? arts : arts.filter(a => a.status === 'publik');
       setMyArtworks(filteredArts || []);
 
-      // HITUNG TOTAL LIKE SELURUH KARYA UNTUK PROFIL
       const total = arts.reduce((acc, curr) => acc + (curr.INTERAKSI?.[0]?.count || 0), 0);
       setTotalLikes(total);
 
@@ -51,7 +51,6 @@ const UserProfile = ({ user, onBack, onUpdate, viewingUser = null }) => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // FUNGSI HAPUS KARYA
   const handleDelete = async (id_karya, filePath) => {
     const confirmDelete = window.confirm("Hapus karya ini secara permanen?");
     if (!confirmDelete) return;
@@ -86,7 +85,6 @@ const UserProfile = ({ user, onBack, onUpdate, viewingUser = null }) => {
           <h2 className="profile-username">@{targetUser?.username || "siswa"}</h2>
           <p className="profile-bio">{targetUser?.bio || "SD Katolik 10 Santa Theresia Manado"}</p>
           
-          {/* STATISTIK DI BAWAH BIO */}
           <div className="profile-stats-row">
             <div className="stat-item">
               <strong>{myArtworks.length}</strong>
@@ -158,8 +156,27 @@ const UserProfile = ({ user, onBack, onUpdate, viewingUser = null }) => {
                 </div>
                 <h3>{selectedArt.judul}</h3>
                 <p>{selectedArt.deskripsi}</p>
+
+                {/* PERUBAHAN: Tampilan Alasan Penolakan dari Admin */}
+                {selectedArt.status === 'ditolak' && selectedArt.catatan_admin && (
+                  <div className="admin-note" style={{
+                    backgroundColor: '#fff1f0',
+                    borderLeft: '4px solid #ff4d4f',
+                    padding: '10px',
+                    margin: '10px 0',
+                    borderRadius: '4px',
+                    textAlign: 'left'
+                  }}>
+                    <strong style={{ color: '#cf1322', fontSize: '0.85rem', display: 'block' }}>Catatan Admin:</strong>
+                    <p style={{ color: '#434343', fontStyle: 'italic', fontSize: '0.8rem', margin: '5px 0 0' }}>
+                      "{selectedArt.catatan_admin}"
+                    </p>
+                  </div>
+                )}
+
                 <span className={`badge-status ${selectedArt.status}`}>
-                  {selectedArt.status === 'publik' ? '✅ Publik' : ' Menunggu Review'}
+                  {selectedArt.status === 'publik' ? '✅ Publik' : 
+                   selectedArt.status === 'ditolak' ? '❌ Ditolak' : '⏳ Menunggu Review'}
                 </span>
             </div>
           </div>
@@ -169,7 +186,6 @@ const UserProfile = ({ user, onBack, onUpdate, viewingUser = null }) => {
   );
 };
 
-// sub komponen grid
 const GalleryGrid = ({ artworks, onItemClick }) => (
   <section className="gallery-grid">
     {artworks.length > 0 ? artworks.map((art) => (
@@ -178,8 +194,8 @@ const GalleryGrid = ({ artworks, onItemClick }) => (
           src={art.file_path} 
           alt={art.judul} 
           style={{ 
-            opacity: art.status === 'menunggu' ? 0.4 : 1,
-            filter: art.status === 'menunggu' ? 'grayscale(100%)' : 'none' 
+            opacity: (art.status === 'menunggu' || art.status === 'ditolak') ? 0.4 : 1,
+            filter: (art.status === 'menunggu' || art.status === 'ditolak') ? 'grayscale(100%)' : 'none' 
           }} 
         />
         <div className="item-overlay">
@@ -194,7 +210,6 @@ const GalleryGrid = ({ artworks, onItemClick }) => (
   </section>
 );
 
-//  Edit Profil 
 const EditProfileForm = ({ user, onSuccess }) => {
     const [editData, setEditData] = useState({ 
       username: user.username || "", 
@@ -244,7 +259,6 @@ const EditProfileForm = ({ user, onSuccess }) => {
     );
 };
 
-//  Unggah Karya
 const UploadWorkForm = ({ user, categories, onSuccess }) => {
     const [form, setForm] = useState({ judul: "", deskripsi: "", file: null, id_kategori: "" });
     const [upLoading, setUpLoading] = useState(false);
