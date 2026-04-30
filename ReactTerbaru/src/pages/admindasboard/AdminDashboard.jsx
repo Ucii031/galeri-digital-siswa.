@@ -18,14 +18,10 @@ const AdminDashboard = ({ onLogout }) => {
   const [topRatedKarya, setTopRatedKarya] = useState([]);
   const [pollingWinners, setPollingWinners] = useState([]);
   
-  // State untuk Modal Profile
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [showModal, setShowModal] = useState(false);
-
-  // State untuk fitur Checkbox
   const [selectedComments, setSelectedComments] = useState([]);
   const [selectedStudents, setSelectedStudents] = useState([]);
-
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -42,7 +38,6 @@ const AdminDashboard = ({ onLogout }) => {
         sb.from('INTERAKSI').select('*', { count: 'exact', head: true }).eq('jenis_interaksi', 'like'),
         sb.from('INTERAKSI').select('*', { count: 'exact', head: true }).eq('jenis_interaksi', 'komentar'),
         sb.from('KARYA').select(`*, USER!KARYA_id_user_fkey(nama_lengkap), INTERAKSI(count)`).eq('status', 'publik'),
-        // Mengambil data dari tabel POLLING sesuai struktur database Anda
         sb.from('POLLING').select(`kategori_polling, id_target_siswa, USER:id_target_siswa(*)`)
       ]);
 
@@ -52,7 +47,7 @@ const AdminDashboard = ({ onLogout }) => {
       setStudents(usersRes.data || []);
       setStats({ 
         likes: likesRes.count || 0, 
-        comments: commentsRes.count || 0, 
+        comments: commentsRes.count || 0, // Data ini sudah diambil
         totalSiswa: usersRes.data?.length || 0 
       });
 
@@ -62,7 +57,6 @@ const AdminDashboard = ({ onLogout }) => {
         .slice(0, 5);
       setTopRatedKarya(sortedKarya);
 
-      // Logika Polling dengan Case Sensitivity (Huruf Kapital di Awal)
       if (pollingRes.data) {
         const categories = ['Tercantik', 'Terganteng', 'Terpintar', 'Terajin', 'Terbaik', 'Termanis'];
         const winners = categories.map(cat => {
@@ -107,7 +101,6 @@ const AdminDashboard = ({ onLogout }) => {
     return () => { sb.removeChannel(karyaChannel); };
   }, [fetchAdminData, currentView]);
 
-  // Handler Actions
   const handleAction = async (id, newStatus) => {
     let alasan = null;
     if (newStatus === 'ditolak') {
@@ -145,7 +138,6 @@ const AdminDashboard = ({ onLogout }) => {
     }
   };
 
-  // Checkbox Handlers
   const toggleSelectComment = (id) => setSelectedComments(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   const toggleSelectStudent = (id) => setSelectedStudents(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
 
@@ -197,7 +189,7 @@ const AdminDashboard = ({ onLogout }) => {
       </nav>
 
       <main className="admin-main">
-        {/* STATS SECTION - Tetap Muncul */}
+        {/* STATS SECTION - Kartu Komentar Ditambahkan di Sini */}
         <section className="stats-section">
           <div className="stats-grid">
             <div className="stat-card">
@@ -211,6 +203,11 @@ const AdminDashboard = ({ onLogout }) => {
             <div className="stat-card">
               <div className="stat-icon red"><MdFavorite /></div>
               <div className="stat-info"><h3>{stats.likes}</h3><p>Total Suka</p></div>
+            </div>
+            {/* FITUR JUMLAH KOMENTAR YANG SEBELUMNYA HILANG */}
+            <div className="stat-card">
+              <div className="stat-icon green" style={{ backgroundColor: '#e8f5e9', color: '#2e7d32' }}><MdChat /></div>
+              <div className="stat-info"><h3>{stats.comments}</h3><p>Total Komentar</p></div>
             </div>
           </div>
         </section>
