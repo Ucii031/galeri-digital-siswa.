@@ -292,7 +292,7 @@ const UploadWorkForm = ({ user, categories, onSuccess }) => {
       <form className="form-manage" onSubmit={handleUpload}>
         <h3>Unggah Karya</h3>
         <input type="text" placeholder="Judul Karya" required onChange={e => setForm({...form, judul: e.target.value})} />
-        <textarea placeholder="Deskripsi karya..." onChange={e => setForm({...form, deskripsi: e.target.value})} />
+        <textarea placeholder="Deskripsi karya (max 50 kata)" onChange={e => setForm({...form, deskripsi: e.target.value})} />
         <select required value={form.id_kategori} onChange={e => setForm({...form, id_kategori: e.target.value})}>
           <option value="">-- Pilih Kategori --</option>
           {categories.map(c => <option key={c.id_kategori} value={c.id_kategori}>{c.nama_kategori}</option>)}

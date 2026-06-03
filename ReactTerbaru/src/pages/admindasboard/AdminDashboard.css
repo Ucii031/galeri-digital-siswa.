@@ -634,3 +634,172 @@
     transform: translateY(-3px);
     transition: 0.3s;
 }
+
+/* --- Tambahan Gaya CSS Fitur Baru Admin --- */
+
+.filter-header-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 12px;
+}
+
+.select-box-wrapper {
+  display: flex;
+  align-items: center;
+  background-color: #ffffff;
+  border: 1px solid #dcdde1;
+  border-radius: 8px;
+  padding: 6px 12px;
+  gap: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.select-box-wrapper select {
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: #2f3640;
+  cursor: pointer;
+  background: transparent;
+}
+
+.table-mini-img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Badge Status Fitur Draft & Validasi */
+.badge-status {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.badge-status.publik { background-color: #e8f5e9; color: #2e7d32; }
+.badge-status.menunggu { background-color: #e3f2fd; color: #1565c0; }
+.badge-status.ditolak { background-color: #ffebee; color: #c62828; }
+.badge-status.draft { background-color: #f5f5f5; color: #616161; border: 1px dashed #bdbdbd; }
+
+/* Tombol Lihat Komentar */
+.btn-view-comment {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+
+.btn-view-comment:hover {
+  background-color: #2980b9;
+}
+
+/* Modal Komentar Tambahan */
+.comment-modal-content {
+  background: white;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  animation: slideDown 0.3s ease-out;
+}
+
+.modal-comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.modal-comment-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.close-modal-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+}
+
+.modal-comment-body {
+  padding: 20px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.comment-modal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.comment-modal-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background: #fdfdfd;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #f1f2f6;
+}
+
+.comment-modal-item p {
+  margin: 4px 0 0 0;
+  color: #555;
+  font-style: italic;
+  font-size: 13px;
+}
+
+.btn-delete-comment-mini {
+  background-color: #ff7675;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.btn-delete-comment-mini:hover {
+  background-color: #d63031;
+}
+
+.empty-comment-text {
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}
+
+/* Modifikasi Khusus Kartu Karya of the month */
+.special-month-card {
+  border-left: 4px solid #ff9800 !important;
+  background: linear-gradient(to right, #fff9db, #ffffff) !important;
+}
+
+.month-label {
+  background-color: #ff9800 !important;
+}

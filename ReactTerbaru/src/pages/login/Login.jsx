@@ -15,9 +15,9 @@ function Login({ onSwitchToRegister, onLoginSuccess }) {
     const virtualEmail = `${nama.trim().toLowerCase().replace(/\s/g, "")}@portofolio.com`;
 
     try {
-      // --- PERBAIKAN: Menggunakan 'email' bukan 'nama' ---
+    
       const { data: authData, error: authError } = await sb.auth.signInWithPassword({
-        email: virtualEmail, // <-- PERUBAHAN: Gunakan virtualEmail yang sudah dibuat
+        email: virtualEmail, 
         password: password,
       });
 

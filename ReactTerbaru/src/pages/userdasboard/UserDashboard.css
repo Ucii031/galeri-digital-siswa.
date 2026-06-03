@@ -27,7 +27,7 @@ body {
 .fade-in { animation: fadeIn 0.4s ease-in-out; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-/*  NAVBAR */
+/* NAVBAR */
 .navbar {
     display: flex;
     justify-content: space-between;
@@ -56,6 +56,13 @@ body {
     font-size: 1.4rem;
     font-weight: 800;
     color: var(--primary); 
+}
+
+.logo-text-kid {
+    background: linear-gradient(45deg, #2a37f1, #6c5ce7, #ff4757);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
 }
 
 .logo1 {
@@ -135,6 +142,10 @@ body {
     object-fit: cover;
 }
 
+.pulse-animation {
+    animation: kidPulse 2s infinite ease-in-out;
+}
+
 .hero-badge {
     background: #FFE66D;
     padding: 8px 20px;
@@ -142,17 +153,19 @@ body {
     font-weight: 800;
     font-size: 0.9rem;
     box-shadow: 0 4px 12px rgba(255, 230, 109, 0.4);
+    display: inline-block;
 }
 
 .hero-title {
     font-size: clamp(2.5rem, 5vw, 4rem);
     margin: 20px 0;
     line-height: 1.1;
+    font-weight: 900;
 }
 
-.highlight {
+.highlight-kid {
     color: var(--primary);
-    background: linear-gradient(to right, var(--primary), var(--purple));
+    background: linear-gradient(to right, #ff4757, #6c5ce7, #2a37f1);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -177,7 +190,7 @@ body {
 .btn-primary {
     background: var(--primary);
     color: white;
-    box-shadow: 0 8px 20px rgba(255, 107, 107, 0.3);
+    box-shadow: 0 8px 20px rgba(42, 55, 241, 0.3);
 }
 
 .btn-secondary {
@@ -205,7 +218,7 @@ body {
 .gallery-section-fullscreen {
     width: 100%;
     height: 100vh;
-    background-color: blue;
+    background-color: #1e1e2f;
     overflow: hidden;
     position: relative;
     margin-top: 0px;
@@ -382,19 +395,19 @@ body {
     margin-bottom: 5px;
 }
 
-.art-post-title { font-size: 1rem; margin-bottom: 8px; font-weight: normal; }
-.art-post-desc { font-size: 0.9rem; opacity: 0.8; line-height: 1.4; }
+.art-post-title { font-size: 1.2rem; margin-bottom: 8px; font-weight: 800; color: #ffe66d; }
+.art-post-desc { font-size: 0.95rem; opacity: 0.9; line-height: 1.4; }
 .pop-cat-badge { display: inline-block; background: #ffffff; color: #000000; padding: 3px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; margin-bottom: 8px; }
 .loading-state-fullscreen, .empty-msg-fullscreen { color: white; text-align: center; padding-top: 50vh; }
 
-/*  MODAL & CHAT SECTION */
+/* MODAL & CHAT SECTION */
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(207, 33, 33, 0.8); 
+    background: rgba(0, 0, 0, 0.6); 
     backdrop-filter: blur(4px); 
     display: flex;
     justify-content: center;
@@ -422,7 +435,7 @@ body {
 
 .modal-header {
     padding: 15px 20px;
-    border-bottom: 1px solid #000000;
+    border-bottom: 1px solid #eeeeee;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -510,14 +523,107 @@ body {
 /* FOOTER SECTION*/
 .footer {
     text-align: center;
-    padding: 10px;
+    padding: 15px;
     background: #35383a;
     margin-top: 50px;
     color: #fcfcfc;
     font-size: 0.9rem;
 }
 
-/*  RESPONSIVE & MEDIA QUERIES */
+/* ==========================================================================
+   KODE BARU: ANIMASI BERGERAK UNTUK DASHBOARD ANAK-ANAK (DEKORATIF & HALUS)
+   ========================================================================== */
+
+/* 1. Animasi Balon Udara & Layang-Layang Melintas */
+.floating-balloon {
+  position: absolute;
+  font-size: 40px;
+  top: 15%;
+  left: -100px;
+  animation: flyAcross 28s infinite linear;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.floating-kite {
+  position: absolute;
+  font-size: 35px;
+  top: 40%;
+  right: -100px;
+  animation: flyAcrossReverse 35s infinite linear;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* 2. Animasi Bintang Berkedip (Sparkle) di Sekitar Judul Banner */
+.sparkle-decorations {
+  position: relative;
+  width: 100%;
+  height: 0;
+  pointer-events: none;
+}
+
+.star-sparkle {
+  position: absolute;
+  display: inline-block;
+  animation: twinkleStar 1.5s infinite alternate ease-in-out;
+}
+
+.star-sparkle.s1 { top: -45px; left: 15%; font-size: 25px; animation-delay: 0s; }
+.star-sparkle.s2 { top: -10px; right: 15%; font-size: 20px; animation-delay: 0.5s; }
+.star-sparkle.s3 { bottom: -60px; left: 50%; font-size: 22px; animation-delay: 0.2s; }
+
+/* 3. Efek Goyang Lucu Saat Kursor Menyentuh Tombol Utama / Logo */
+.bounce-hover:hover {
+  animation: jiggleButton 0.5s ease-in-out infinite;
+}
+
+/* 4. Sentuhan Interaktif Bergerak pada Kartu Galeri dan Polling */
+.kid-card, .kid-poll-card {
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease !important;
+}
+
+.kid-card:hover, .kid-poll-card:hover {
+  transform: translateY(-8px) scale(1.015);
+  box-shadow: 0 15px 35px rgba(108, 92, 231, 0.2) !important;
+}
+
+/* ==========================================================================
+   KEYFRAMES ALUR GERAKAN (LOGIKA ANIMASI)
+   ========================================================================== */
+@keyframes kidPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes flyAcross {
+  0% { transform: translateX(0) translateY(0) rotate(0deg); }
+  50% { transform: translateX(50vw) translateY(-30px) rotate(5deg); }
+  100% { transform: translateX(calc(100vw + 150px)) translateY(0) rotate(-5deg); }
+}
+
+@keyframes flyAcrossReverse {
+  0% { transform: translateX(0) translateY(0) rotate(0deg); }
+  50% { transform: translateX(-50vw) translateY(40px) rotate(-10deg); }
+  100% { transform: translateX(calc(-100vw - 150px)) translateY(0) rotate(10deg); }
+}
+
+@keyframes twinkleStar {
+  0% { transform: scale(0.6) rotate(0deg); opacity: 0.3; }
+  100% { transform: scale(1.1) rotate(15deg); opacity: 1; }
+}
+
+@keyframes jiggleButton {
+  0% { transform: scale(1.04) rotate(0deg); }
+  25% { transform: scale(1.04) rotate(-1.5deg); }
+  75% { transform: scale(1.04) rotate(1.5deg); }
+  100% { transform: scale(1.04) rotate(0deg); }
+}
+
+/* ==========================================================================
+   RESPONSIVE & MEDIA QUERIES (ASLI DIJAGA)
+   ========================================================================== */
 @media (min-width: 768px) {
     .stats-grid { gap: 1.1rem; }
     .stat-card { flex-direction: row; padding: 1.5rem; text-align: left; gap: 1rem; }
@@ -564,12 +670,11 @@ body {
     .nav-linkss a:hover, .nav-linkss a.active { background: var(--primary) !important; color: white !important; }
     .btn-logout { width: auto !important; margin-top: 0 !important; padding: 8px 18px !important; font-size: 0.9rem !important; background: #f1f2f6 !important; }
     .hero-content { max-width: 800px; margin: 0 auto; }
-    .awan { width: 100% !important; margin-top: -190px !important; left: 0% !important; height: 50vh !important; }
     .gallery-media-img { max-width: 85%; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-    .awan{margin-top: 1vh !important; height: 55vh !important;}
+    .awan { position: absolute; margin-top: 1vh !important; left: 0% !important; height: 55vh !important; width: 100% !important; z-index: -1; pointer-events: none; }
 }
 
-/* hp */
+/* HP */
 @media (max-width: 768px) {
     .menu-toggle {
         display: block !important; 
@@ -612,13 +717,15 @@ body {
     .hero { padding-top: 100px; }
     .hero-buttons { flex-direction: column; }
     .gallery-grid { grid-template-columns: 1fr; }
+    .floating-balloon, .floating-kite { display: none; } /* Matikan animasi melintas di HP agar tidak berat */
 }
 
-/* HP*/
+/* HP MINI */
 @media (max-width: 480px) {
     .modal-content { max-height: 90vh; border-radius: 20px 20px 0 0; position: absolute; bottom: 0; }
 }
-/* CSS KHUSUS POLLING TANPA MERUSAK CSS LAIN */
+
+/* CSS POLLING SECTION */
 .polling-view-container { padding: 120px 20px 80px; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
 .polling-intro { text-align: center; margin-bottom: 50px; }
 .polling-intro h2 { font-size: 2.5rem; color: #2d3436; display: flex; align-items: center; justify-content: center; gap: 15px; }
@@ -633,5 +740,4 @@ body {
 .avatar-placeholder-icon { width: 100%; height: 100%; background: #dfe6e9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3rem; color: #b2bec3; border: 3px dashed #b2bec3; }
 .poll-select-input { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid #e0e0e0; margin-top: 15px; font-family: inherit; cursor: pointer; background: #f9f9f9; }
 .vote-confirmed-label { margin-top: 15px; color: #00b894; font-weight: 800; font-size: 1.1rem; padding: 10px; background: rgba(0, 184, 148, 0.1); border-radius: 10px; }
-.fade-in { animation: fadeIn 0.6s ease-out; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+

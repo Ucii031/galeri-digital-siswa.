@@ -5,6 +5,7 @@ import UserProfile from "../profile/UserProfile";
 import { fetchComments, postComment } from '../../api/interaksi';
 import { Toaster, toast } from 'react-hot-toast';
 import { MdLogout, MdHowToVote } from "react-icons/md";
+import confetti from 'canvas-confetti';
 
 const UserDashboard = ({ user, onLogout }) => {
   const [currentView, setCurrentView] = useState('beranda');
@@ -24,22 +25,18 @@ const UserDashboard = ({ user, onLogout }) => {
   const [allStudents, setAllStudents] = useState([]);
   const [userVotes, setUserVotes] = useState([]);
   const [selectedCandidates, setSelectedCandidates] = useState({});
-  const [pollingStats, setPollingStats] = useState({}); // State untuk menyimpan jumlah suara otomatis
+  const [pollingStats, setPollingStats] = useState({});
 
-  // --- LOGIKA FETCH DATA POLLING (Sama Seperti Admin) ---
+  // --- LOGIKA FETCH DATA POLLING ---
   const fetchPollingContext = useCallback(async () => {
     try {
       const { data: students } = await sb.from('USER').select('id_user, nama_lengkap, foto_url').eq('role', 'siswa');
-      
-      // Ambil seluruh data dari tabel POLLING untuk menghitung statistik suara
       const { data: allVotes } = await sb.from('POLLING').select('kategori_polling');
-      
       const { data: myVotes } = await sb.from('POLLING').select('kategori_polling, id_target_siswa').eq('id_pemilih', currentUserData.id_user);
       
       setAllStudents(students || []);
       setUserVotes(myVotes?.map(v => v.kategori_polling) || []);
 
-      // Hitung total suara per kategori secara otomatis
       const stats = {};
       allVotes?.forEach(v => {
         stats[v.kategori_polling] = (stats[v.kategori_polling] || 0) + 1;
@@ -57,6 +54,16 @@ const UserDashboard = ({ user, onLogout }) => {
     }
   }, [currentUserData.id_user]);
 
+  // ANIMASI CELEBRATION
+  const triggerCelebration = () => {
+    confetti({
+      particleCount: 120,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#9b59b6']
+    });
+  };
+
   const handleVote = async (studentId, kategori) => {
     const studentObj = allStudents.find(s => s.id_user === studentId);
     const { error } = await sb.from('POLLING').insert([{
@@ -66,11 +73,11 @@ const UserDashboard = ({ user, onLogout }) => {
     }]);
 
     if (!error) {
-      toast.success(`Berhasil memilih ${studentObj.nama_lengkap}!`);
+      triggerCelebration();
+      toast.success(`Hore! Berhasil memilih ${studentObj.nama_lengkap}! 🎉`);
       setUserVotes([...userVotes, kategori]);
       setSelectedCandidates(prev => ({ ...prev, [kategori]: studentObj }));
       
-      // Update perhitungan suara secara otomatis di UI setelah klik
       setPollingStats(prev => ({
         ...prev,
         [kategori]: (prev[kategori] || 0) + 1
@@ -176,6 +183,9 @@ const UserDashboard = ({ user, onLogout }) => {
     } else {
       const newLike = { id_user: currentUserData.id_user, jenis_interaksi: 'like' };
       updatedKaryaList[karyaIndex].INTERAKSI = [...(targetKarya.INTERAKSI || []), newLike];
+      
+      confetti({ particleCount: 30, angle: 60, spread: 55, origin: { x: 0 } });
+      confetti({ particleCount: 30, angle: 120, spread: 55, origin: { x: 1 } });
     }
     setKaryaList(updatedKaryaList);
 
@@ -205,23 +215,23 @@ const UserDashboard = ({ user, onLogout }) => {
   );
 
   return (
-    <div className="dashboard-wrapper">
-      <Toaster position="top-right" />
+    <div className="dashboard-wrapper childish-theme">
+      <Toaster position="top-center" />
       
-      <nav className="navbar">
-        <div className="logo" onClick={() => navigateTo('beranda')}>
+      <nav className="navbar animated-navbar">
+        <div className="logo bounce-hover" onClick={() => navigateTo('beranda')}>
           <img className='logo1' src="icon.ico" alt="logo" />
-          <span className="logo-text">GaleriDigital</span>
+          <span className="logo-text-kid">Galeri🎨Kita</span>
         </div>
 
         {isMenuOpen && <div className="menu-overlay" onClick={() => setIsMenuOpen(false)}></div>}
 
         <ul className={`nav-linkss ${isMenuOpen ? 'active' : ''}`}>
-          <li><a href="#beranda" className={currentView === 'beranda' ? 'active' : ''} onClick={(e) => { e.preventDefault(); navigateTo('beranda'); }}>Beranda</a></li>
-          <li><a href="#polling" className={currentView === 'polling' ? 'active' : ''} onClick={(e) => { e.preventDefault(); navigateTo('polling'); }}>Polling</a></li>
-          <li><a href="#galeri-fullscreen" onClick={() => setIsMenuOpen(false)}>Lihat Galeri</a></li>
-          <li><a href="#profile" onClick={(e) => { e.preventDefault(); navigateTo('profile'); }}>Profil Saya</a></li>
-          <li><button className="btn-logout" onClick={onLogout}><MdLogout size={18} /> Keluar</button></li>
+          <li><a href="#beranda" className={currentView === 'beranda' ? 'active' : ''} onClick={(e) => { e.preventDefault(); navigateTo('beranda'); }}>🏠 Beranda</a></li>
+          <li><a href="#polling" className={currentView === 'polling' ? 'active' : ''} onClick={(e) => { e.preventDefault(); navigateTo('polling'); }}>🗳️ Polling Seru</a></li>
+          <li><a href="#galeri-fullscreen" onClick={() => setIsMenuOpen(false)}>🖼️ Lihat Galeri</a></li>
+          <li><a href="#profile" onClick={(e) => { e.preventDefault(); navigateTo('profile'); }}>⭐ Profilku</a></li>
+          <li><button className="btn-logout kid-logout" onClick={onLogout}><MdLogout size={18} /> Keluar</button></li>
         </ul>
 
         <button className="menu-toggle" onClick={() => setIsMenuOpen(!isMenuOpen)}>
@@ -230,53 +240,70 @@ const UserDashboard = ({ user, onLogout }) => {
       </nav>
 
       {currentView === 'beranda' && (
-        <>
-          <section className="hero">
+        <div className="fade-in-view">
+          <section className="hero kid-hero">
+            {/* ELEMEN DEKORASI ANIMASI BERGERAK */}
+            <div className="cloud-animation-container">
+              <img className='awan awan-1' src="Awan.png" alt="awan" />
+              <img className='awan awan-2' src="Awan.png" alt="awan" />
+              <div className="floating-balloon">🎈</div>
+              <div className="floating-kite">🪁</div>
+            </div>
+            
             <div className="hero-content">
-              <img className='logo-2' src="logo.png" alt="logo" />
-              <span className="hero-badge">👋 Halo, {currentUserData?.nama_lengkap}</span>
-              <h1 className="hero-title">Ruang Pameran <span className="highlight">Karya Siswa</span></h1>
-              <p className="hero-subtitle">Jelajahi kreativitas tanpa batas dari teman-temanmu.</p>
+              {/* ELEMEN KERLIPAN BINTANG */}
+              <div className="sparkle-decorations">
+                <span className="star-sparkle s1">⭐</span>
+                <span className="star-sparkle s2">✨</span>
+                <span className="star-sparkle s3">✨</span>
+              </div>
+
+              <img className='logo-2 pulse-animation' src="logo.png" alt="logo" />
+              <span className="hero-badge kid-badge">👋 Halo, Anak Pintar {currentUserData?.nama_lengkap?.split(' ')[0]}!</span>
+              <h1 className="hero-title kid-title">Toko Kreativitas <span className="highlight-kid">Karya Kita</span></h1>
+              <p className="hero-subtitle kid-subtitle">Yuk, lihat karya-karya keren buatan teman sekolahmu! 🌟</p>
               <div className="hero-buttons">
-                <button className="btn btn-primary" onClick={() => navigateTo('profile')}>📤 Unggah Karya</button>
-                <a href="#galeri-fullscreen" className="btn btn-secondary" onClick={() => setIsMenuOpen(false)}>🖼️ Lihat Galeri</a>
-                <img className='awan' src="Awan.png" alt="awan" />
+                <button className="btn btn-primary btn-kid bounce-hover" onClick={() => navigateTo('profile')}>📤 Unggah Karyamu</button>
+                <a href="#galeri-fullscreen" className="btn btn-secondary btn-kid-secondary bounce-hover" onClick={() => setIsMenuOpen(false)}>🖼️ Masuk Galeri</a>
               </div>
             </div>
           </section>
 
           <section id="galeri-fullscreen" className="gallery-section-fullscreen">
             <div className="gallery-controls">
-              <div className="search-box">
-                <input type="search" placeholder="Cari karya atau kategori..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+              <div className="search-box kid-search">
+                <input type="search" placeholder="🔎 Cari karya hebat atau nama teman..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
               </div>
             </div>
             {loading ? (
-              <div className="loading-state-fullscreen">Menyiapkan galeri... ⏳</div>
+              <div className="loading-state-kid">
+                <div className="spinner-kid">🎨</div>
+                <p>Sedang menata lukisan galeri... Tunggu ya! ⏳</p>
+              </div>
             ) : (
               <div className="gallery-snap-container">
                 {filteredKarya.map((art) => {
                   const userHasLiked = art.INTERAKSI?.some(i => i.id_user === currentUserData.id_user && i.jenis_interaksi === 'like');
                   return (
-                    <div key={art.id_karya} className="gallery-post-item">
+                    <div key={art.id_karya} className="gallery-post-item kid-card">
                       <div className="gallery-media-wrapper">
                         <img src={art.file_path} alt={art.judul} className="gallery-media-img" />
-                        {art.KATEGORI?.nama_kategori && <span className="category-tag-badge">{art.KATEGORI.nama_kategori}</span>}
+                        {art.KATEGORI?.nama_kategori && <span className="category-tag-badge kid-tag">{art.KATEGORI.nama_kategori}</span>}
                         <div className="gallery-media-overlay"></div>
                       </div>
-                      <div className="gallery-actions-side">
-                        <button type="button" className={`btn-action-like ${userHasLiked ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleLike(art.id_karya); }}>
+                      <div className="gallery-actions-side kid-actions">
+                        <button type="button" className={`btn-action-like pop-hover ${userHasLiked ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); handleLike(art.id_karya); }}>
                           {userHasLiked ? '❤️' : '🤍'}
                         </button>
-                        <button className="btn-action-comment" onClick={() => handleOpenComments(art)}>💬</button>
+                        <button className="btn-action-comment pop-hover" onClick={() => handleOpenComments(art)}>💬</button>
                       </div>
                       <div className="gallery-post-info">
-                        <div className="author-container" onClick={() => handleViewFriendProfile(art.USER)}>
-                          <img src={art.USER?.foto_url || "https://via.placeholder.com/40"} alt="avatar" className="author-avatar-small" />
+                        <div className="author-container clickable-avatar" onClick={() => handleViewFriendProfile(art.USER)}>
+                          <img src={art.USER?.foto_url || "https://via.placeholder.com/40"} alt="avatar" className="author-avatar-small kid-avatar" />
                           <h4 className="art-author-name">@{art.USER?.nama_lengkap?.split(' ')[0].toLowerCase()}</h4>
                         </div>
-                        <h3 className="art-post-title">{art.judul}</h3>
-                        <p className="art-post-desc">{art.deskripsi || "Tanpa deskripsi."}</p>
+                        <h3 className="art-post-title kid-post-title">{art.judul}</h3>
+                        <p className="art-post-desc kid-post-desc">{art.deskripsi || "Temanmu belum menulis cerita tentang karya ini."}</p>
                       </div>
                     </div>
                   );
@@ -284,45 +311,44 @@ const UserDashboard = ({ user, onLogout }) => {
               </div>
             )}
           </section>
-        </>
+        </div>
       )}
 
       {currentView === 'polling' && (
-        <section className="polling-view-container fade-in">
-          <div className="polling-intro">
-            <h2><MdHowToVote /> Polling Atribut Siswa</h2>
-            <p>Berikan suaramu untuk teman yang paling menginspirasi!</p>
+        <section className="polling-view-container page-slide-up">
+          <div className="polling-intro kid-poll-intro">
+            <h2><MdHowToVote className="bounce-animation" /> 🗳️ Mahkota Penghargaan Juara</h2>
+            <p>Pilih sahabat terbaikmu di sekolah untuk mendapatkan predikat ter-favorit! ✨</p>
           </div>
           <div className="polling-cards-grid">
             {['Tercantik', 'Terganteng', 'Terpintar', 'Terajin', 'Terbaik', 'Termanis'].map((kat) => {
               const candidate = selectedCandidates[kat];
               const hasVoted = userVotes.includes(kat);
-              const totalVotes = pollingStats[kat] || 0; // Mengambil total suara yang dihitung otomatis
+              const totalVotes = pollingStats[kat] || 0;
 
               return (
-                <div key={kat} className={`poll-card-item ${hasVoted ? 'voted-locked' : ''}`}>
-                  {/* Indikator Jumlah Suara Terupdate Otomatis */}
-                  <div className="vote-count-badge" style={{ position: 'absolute', top: '10px', right: '10px', background: '#007bff', color: '#fff', padding: '2px 8px', borderRadius: '10px', fontSize: '11px' }}>
-                    {totalVotes} Suara
+                <div key={kat} className={`poll-card-item kid-poll-card ${hasVoted ? 'voted-locked-kid' : 'pop-entry'}`}>
+                  <div className="vote-count-badge kid-vote-badge">
+                    🏆 {totalVotes} Jempol
                   </div>
 
-                  <div className="poll-card-category">Gelar {kat}</div>
+                  <div className="poll-card-category kid-category">✨ Paling {kat} ✨</div>
                   <div className="poll-card-avatar">
                     {candidate ? (
-                      <div className="avatar-frame">
+                      <div className="avatar-frame kid-frame-active">
                         <img src={candidate.foto_url || "https://via.placeholder.com/150"} alt="selected" />
-                        <div className="check-status">✓</div>
+                        <div className="check-status-kid">⭐</div>
                       </div>
-                    ) : ( <div className="avatar-placeholder-icon">?</div> )}
+                    ) : ( <div className="avatar-placeholder-icon kid-placeholder">?</div> )}
                   </div>
                   <div className="poll-card-body">
-                    <h4 className="candidate-name">{candidate ? candidate.nama_lengkap : "Belum Ada Pilihan"}</h4>
+                    <h4 className="candidate-name kid-candidate-name">{candidate ? `🎉 ${candidate.nama_lengkap}` : "Siapa pilihanmu?"}</h4>
                     {!hasVoted ? (
-                      <select className="poll-select-input" onChange={(e) => handleVote(e.target.value, kat)} defaultValue="">
-                        <option value="" disabled>Pilih Nama Siswa...</option>
-                        {allStudents.map(s => <option key={s.id_user} value={s.id_user}>{s.nama_lengkap}</option>)}
+                      <select className="poll-select-input kid-select" onChange={(e) => handleVote(e.target.value, kat)} defaultValue="">
+                        <option value="" disabled>Pilih nama temanmu...</option>
+                        {allStudents.map(s => <option key={s.id_user} value={s.id_user}>👦👧 {s.nama_lengkap}</option>)}
                       </select>
-                    ) : ( <div className="vote-confirmed-label">Suara Terkunci</div> )}
+                    ) : ( <div className="vote-confirmed-label-kid">Pilihan Terkunci 🔒</div> )}
                   </div>
                 </div>
               );
@@ -332,34 +358,36 @@ const UserDashboard = ({ user, onLogout }) => {
       )}
 
       {selectedKarya && (
-        <div className="modal-overlay" onClick={() => { setSelectedKarya(null); window.history.back(); }}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Komentar</h3>
+        <div className="modal-overlay pop-in" onClick={() => { setSelectedKarya(null); window.history.back(); }}>
+          <div className="modal-content kid-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header kid-modal-header">
+              <h3>💬 Obrolan Seru</h3>
               <button className="close-modal" onClick={() => { setSelectedKarya(null); window.history.back(); }}>✕</button>
             </div>
             <div className="comments-list">
-              {loadingComments ? <p className="loading-text">Memuat... ⏳</p> : 
+              {loadingComments ? <p className="loading-text">Membuka kotak pesan... ⏳</p> : 
                 comments.map((c) => (
-                  <div key={c.id_interaksi} className="comment-item">
-                    <img src={c.USER?.foto_url || "https://via.placeholder.com/40"} onClick={() => { setSelectedKarya(null); handleViewFriendProfile(c.USER); }} className="comment-avatar" style={{ cursor: 'pointer' }} alt="ava" />
-                    <div className="comment-text-block">
-                      <p className="comment-author-name" onClick={() => { setSelectedKarya(null); handleViewFriendProfile(c.USER); }} style={{ cursor: 'pointer' }}>{c.USER?.nama_lengkap}</p>
+                  <div key={c.id_interaksi} className="comment-item kid-comment">
+                    <img src={c.USER?.foto_url || "https://via.placeholder.com/40"} onClick={() => { setSelectedKarya(null); handleViewFriendProfile(c.USER); }} className="comment-avatar kid-comment-avatar" alt="ava" />
+                    <div className="comment-text-block kid-comment-box">
+                      <p className="comment-author-name" onClick={() => { setSelectedKarya(null); handleViewFriendProfile(c.USER); }}>{c.USER?.nama_lengkap}</p>
                       <p className="comment-text">{c.isi_komentar}</p>
                     </div>
                   </div>
                 ))
               }
             </div>
-            <form className="comment-form" onSubmit={handleSendComment}>
-              <input type="text" placeholder="Tambahkan komentar..." value={newComment} onChange={(e) => setNewComment(e.target.value)} />
-              <button type="submit" className="btn-send">Kirim</button>
+            <form className="comment-form kid-form" onSubmit={handleSendComment}>
+              <input type="text" placeholder="Tulis pujian manis untuk temanmu di sini..." value={newComment} onChange={(e) => setNewComment(e.target.value)} />
+              <button type="submit" className="btn-send kid-btn-send">Kirim 🚀</button>
             </form>
           </div>
         </div>
       )}
 
-      <footer className="footer"><p> GaleriDigital - SD Katolik 10 Santa Theresia Manado</p></footer>
+      <footer className="footer kid-footer">
+        <p>🎈 GaleriDigital - SD Katolik 10 Santa Theresia Manado 🎈</p>
+      </footer>
     </div>
   );
 };
